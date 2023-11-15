@@ -16,7 +16,6 @@ setup(
     long_description_content_type="text/markdown",
     author='Dominik Behrens',
     author_email='dewberryants@gmail.com',
-    install_requires=['pygame'],
     url='https://github.com/dewberryants/asciimol',
     license=lic,
     packages=find_packages(exclude="docs"),
