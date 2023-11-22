@@ -155,10 +155,12 @@ class Editor:
             w, h = self.screen.get_width(), self.screen.get_height()
             x, y = event.pos
             # Palette
-            sx = (w - 320)
+            sx = (w - 320) + .05 * 320
             sy = .05 * 320
-            if sx < x < w and sy < y < (h - 32) / 2:
+            if sx < x < w - .05 * 320 and sy < y < (h - 32) / 2:
                 mapped_x, mapped_y = int((x - sx) / self.palette.sq), int((y - sy) / self.palette.sq)
+                print((x - sx) / self.palette.sq, (y - sy) / self.palette.sq)
+                print(mapped_x, mapped_y)
                 self.palette.select(mapped_x, mapped_y)
 
     def redraw(self):
@@ -188,7 +190,8 @@ class Editor:
                                               1, (200, 200, 200)), (16, h - 24))
             # Are we drawing?
             if pygame.mouse.get_pressed(3)[0]:
-                self.image.set_color(mapped_x, mapped_y, 255, 0, 0)
+                r, g, b = self.palette.selected
+                self.image.set_color(mapped_x, mapped_y, r, g, b)
             elif pygame.mouse.get_pressed(3)[2]:
                 self.image.set_color(mapped_x, mapped_y, 0, 0, 0)
             # Are we moving the image around?
