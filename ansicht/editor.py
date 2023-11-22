@@ -30,9 +30,6 @@ class Editor:
         # Clock
         self.clock = pygame.time.Clock()
 
-        # Mouse speed
-        self.last_x, self.last_y = None, None
-
         # Default image
         self.image = Image(120, 40)
         self.cursor = None
@@ -59,6 +56,32 @@ class Editor:
         newx = round(self.ps[0] * factor) if round(self.ps[0] * factor) >= 1 else 1
         self.ps = (newx, 2 * newx)
 
+    def draw_sidebar(self, x, width, height):
+        def w(frac):
+            return int(width * frac)
+
+        def h(frac):
+            return int(height * frac)
+
+        # Basic Background Fill
+        self.screen.fill((60, 65, 70), (x, 0, width, height))
+        # Three squares at the top for the drawing tools:
+        # Dot, Line, Square
+        pygame.draw.rect(self.screen, (160, 160, 160),
+                         (x + w(.05), w(.05), w(.8 / 3), w(.8 / 3)))
+        pygame.draw.rect(self.screen, (160, 160, 160),
+                         (x + 2 * w(.05) + w(.8 / 3), w(.05), w(.8 / 3), w(.8 / 3)))
+        pygame.draw.rect(self.screen, (160, 160, 160),
+                         (x + 3 * w(.05) + 2 * w(.8 / 3), w(.05), w(.8 / 3), w(.8 / 3)))
+        # Two squares for the FG/BG palette and symbol table
+        pygame.draw.rect(self.screen, (160, 160, 160),
+                         (x + w(.05), 2 * w(.05) + w(.8 / 3), w(0.9), h(0.5) - w(.8 / 3)))
+        pygame.draw.rect(self.screen, (160, 160, 160),
+                         (x + w(.05),
+                          3 * w(.05) + w(.8 / 3) + h(0.5) - w(.8 / 3),
+                          w(0.9),
+                          h(0.5) - w(.8 / 3)))
+
     def redraw(self):
         w, h = self.screen.get_width(), self.screen.get_height()
 
@@ -78,21 +101,20 @@ class Editor:
                                  (sx + column * psx, sy + row * psy, psx + 1, psy + 1),
                                  width=1)
 
-        # Interface
-        self.screen.fill((60, 65, 70), (w - 320, 0, w, h))
+        # Sidebar
+        self.draw_sidebar(w - 320, 320, h - 32)
+
+        # Status Bar
         self.screen.fill((80, 85, 90), (0, h - 32, w, h))
 
         # Selection
         x, y = pygame.mouse.get_pos()
-        if self.last_x and self.last_y:
-            dx, dy = x - self.last_x, y - self.last_y
-        else:
-            dx, dy = 0, 0
+        dx, dy = pygame.mouse.get_rel()
         if sx < x < sx + self.image.w * psx and sy < y < sy + self.image.h * psy:
             self.cursor = mapped_x, mapped_y = int((x - sx) / psx), int((y - sy) / psy)
             pygame.draw.rect(self.screen, (200, 200, 200), (sx + mapped_x * psx, sy + mapped_y * psy, psx, psy),
                              width=1)
-            self.screen.blit(self.font.render(f"({mapped_x: 6d},{mapped_y: 6d})", 1, (200, 200, 200)), (16, h - 24))
+            self.screen.blit(self.font.render(f"({mapped_x: 6d},{mapped_y: 6d}) ", 1, (200, 200, 200)), (16, h - 24))
             # Are we drawing?
             if pygame.mouse.get_pressed(3)[0]:
                 self.image.r[self.image.w * mapped_y + mapped_x] = 255
@@ -102,9 +124,6 @@ class Editor:
             elif pygame.mouse.get_pressed(3)[1]:
                 self.mx += 0.5 * dx
                 self.my += 0.5 * dy
-
-        # Update last mouse position
-        self.last_x, self.last_y = x, y
 
         # Flip display with the finished surface
         pygame.display.flip()
@@ -120,4 +139,4 @@ class Editor:
                 elif event.type == pygame.MOUSEWHEEL:
                     self.zoom(event)
             self.redraw()
-            self.clock.tick(60)
+            self.clock.tick(30)
