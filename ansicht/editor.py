@@ -5,12 +5,76 @@ import numpy as np
 
 
 class Image:
-    def __init__(self, w, h):
+    def __init__(self, w, h, px):
+        self.draw_border = False
+        self.px = px
         self.w, self.h = w, h
         self.r = np.zeros(w * h, dtype="int32")
         self.g = np.zeros(w * h, dtype="int32")
         self.b = np.zeros(w * h, dtype="int32")
         self.s = np.zeros(w * h, dtype=("str", 1))
+        self.surface = None
+        self.redraw()
+
+    def redraw(self):
+        py = 2 * self.px
+        self.surface = pygame.Surface((self.w * self.px, self.h * py))
+        for row in range(self.h):
+            for column in range(self.w):
+                r, g, b = (int(self.r[row * self.w + column]),
+                           int(self.g[row * self.w + column]),
+                           int(self.b[row * self.w + column]))
+                pygame.draw.rect(self.surface, (r, g, b),
+                                 (column * self.px, row * py, self.px, py))
+                if self.draw_border:
+                    pygame.draw.rect(self.surface, (80, 80, 80),
+                                     (column * self.px, row * py, self.px, py),
+                                     width=1)
+
+    def set_color(self, x, y, r, g, b):
+        self.r[y * self.w + x] = r
+        self.g[y * self.w + x] = g
+        self.b[y * self.w + x] = b
+        py = 2 * self.px
+        pygame.draw.rect(self.surface, (r, g, b), (x * self.px, y * py, self.px + 1, py + 1))
+        if self.draw_border:
+            pygame.draw.rect(self.surface, (80, 80, 80), (x * self.px, y * py, self.px + 1, py + 1), width=1)
+
+    def resize(self, factor):
+        # Smallest zoom distance is 1x2, so we don't lose the actual pixel ratio
+        self.px = round(self.px * factor) if round(self.px * factor) >= 1 else 1
+        self.redraw()
+
+
+class Palette:
+    def __init__(self, w, h):
+        self.marker = (0, 0)
+        self.selected = (0, 0, 0)
+        self.cols = 6
+        self.sq = int(w / self.cols)
+        self.h = h
+        self.surface = None
+        self.redraw()
+
+    def select(self, x, y):
+        v = round((self.cols * y + x) * 255 / (self.cols * round(self.h / self.sq)))
+        self.selected = (v, v, v)
+        self.marker = (x, y)
+        self.redraw()
+
+    def redraw(self):
+        rows = round(self.h / self.sq)
+        self.surface = pygame.Surface((self.cols * self.sq, rows * self.sq))
+        colors = self.cols * rows
+        for row in range(rows):
+            for column in range(self.cols):
+                r = round((row * self.cols + column) * 255 / colors)
+                g, b = r, r
+                pygame.draw.rect(self.surface, (r, g, b), (column * self.sq, row * self.sq, self.sq, self.sq))
+                if (column, row) == self.marker:
+                    pygame.draw.rect(self.surface, (0, 255, 0),
+                                     (column * self.sq, row * self.sq, self.sq, self.sq),
+                                     width=1)
 
 
 class Editor:
@@ -31,10 +95,12 @@ class Editor:
         self.clock = pygame.time.Clock()
 
         # Default image
-        self.image = Image(120, 40)
+        self.image = Image(120, 40, 10)
         self.cursor = None
         self.mx, self.my = (self.screen.get_width() - 320) / 2, (self.screen.get_height() - 32) / 2
-        self.ps = (10, 20)
+
+        # Default Palette
+        self.palette = Palette(320 * 0.9, (self.screen.get_height() - 32) / 2)
 
         # Font
         # Try some of these before giving up
@@ -52,9 +118,7 @@ class Editor:
     def zoom(self, event):
         neg = event.precise_y < 0
         factor = 0.5 if neg else 1.5
-        # Smallest zoom distance is 1x2, so we don't lose the actual pixel ratio
-        newx = round(self.ps[0] * factor) if round(self.ps[0] * factor) >= 1 else 1
-        self.ps = (newx, 2 * newx)
+        self.image.resize(factor)
 
     def draw_sidebar(self, x, width, height):
         def w(frac):
@@ -65,6 +129,7 @@ class Editor:
 
         # Basic Background Fill
         self.screen.fill((60, 65, 70), (x, 0, width, height))
+
         # Three squares at the top for the drawing tools:
         # Dot, Line, Square
         pygame.draw.rect(self.screen, (160, 160, 160),
@@ -73,6 +138,7 @@ class Editor:
                          (x + 2 * w(.05) + w(.8 / 3), w(.05), w(.8 / 3), w(.8 / 3)))
         pygame.draw.rect(self.screen, (160, 160, 160),
                          (x + 3 * w(.05) + 2 * w(.8 / 3), w(.05), w(.8 / 3), w(.8 / 3)))
+
         # Two squares for the FG/BG palette and symbol table
         pygame.draw.rect(self.screen, (160, 160, 160),
                          (x + w(.05), 2 * w(.05) + w(.8 / 3), w(0.9), h(0.5) - w(.8 / 3)))
@@ -82,24 +148,28 @@ class Editor:
                           w(0.9),
                           h(0.5) - w(.8 / 3)))
 
+        self.screen.blit(self.palette.surface, (x + w(0.05), w(0.05)))
+
+    def mouse(self, event):
+        if event.button == 1:
+            w, h = self.screen.get_width(), self.screen.get_height()
+            x, y = event.pos
+            # Palette
+            sx = (w - 320)
+            sy = .05 * 320
+            if sx < x < w and sy < y < (h - 32) / 2:
+                mapped_x, mapped_y = int((x - sx) / self.palette.sq), int((y - sy) / self.palette.sq)
+                self.palette.select(mapped_x, mapped_y)
+
     def redraw(self):
         w, h = self.screen.get_width(), self.screen.get_height()
 
-        self.screen.fill((0, 0, 0))
+        self.screen.fill((30, 33, 35))
 
         # Image Grid
-        psx, psy = self.ps
+        psx, psy = self.image.px, 2 * self.image.px
         sx, sy = self.mx - self.image.w / 2 * psx, self.my - self.image.h / 2 * psy
-        for row in range(self.image.h):
-            for column in range(self.image.w):
-                r, g, b = (int(self.image.r[row * self.image.w + column]),
-                           int(self.image.g[row * self.image.w + column]),
-                           int(self.image.b[row * self.image.w + column]))
-                pygame.draw.rect(self.screen, (r, g, b),
-                                 (sx + column * psx, sy + row * psy, psx + 1, psy + 1))
-                pygame.draw.rect(self.screen, (80, 80, 80),
-                                 (sx + column * psx, sy + row * psy, psx + 1, psy + 1),
-                                 width=1)
+        self.screen.blit(self.image.surface, (sx, sy))
 
         # Sidebar
         self.draw_sidebar(w - 320, 320, h - 32)
@@ -114,12 +184,13 @@ class Editor:
             self.cursor = mapped_x, mapped_y = int((x - sx) / psx), int((y - sy) / psy)
             pygame.draw.rect(self.screen, (200, 200, 200), (sx + mapped_x * psx, sy + mapped_y * psy, psx, psy),
                              width=1)
-            self.screen.blit(self.font.render(f"({mapped_x: 6d},{mapped_y: 6d}) ", 1, (200, 200, 200)), (16, h - 24))
+            self.screen.blit(self.font.render(f"({mapped_x + 1: 6d},{mapped_y + 1: 6d}) ",
+                                              1, (200, 200, 200)), (16, h - 24))
             # Are we drawing?
             if pygame.mouse.get_pressed(3)[0]:
-                self.image.r[self.image.w * mapped_y + mapped_x] = 255
+                self.image.set_color(mapped_x, mapped_y, 255, 0, 0)
             elif pygame.mouse.get_pressed(3)[2]:
-                self.image.r[self.image.w * mapped_y + mapped_x] = 0
+                self.image.set_color(mapped_x, mapped_y, 0, 0, 0)
             # Are we moving the image around?
             elif pygame.mouse.get_pressed(3)[1]:
                 self.mx += 0.5 * dx
@@ -138,5 +209,7 @@ class Editor:
                     self.resize()
                 elif event.type == pygame.MOUSEWHEEL:
                     self.zoom(event)
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    self.mouse(event)
             self.redraw()
-            self.clock.tick(30)
+            self.clock.tick(60)
