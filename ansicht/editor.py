@@ -61,8 +61,8 @@ class CharacterMap:
         x = 0
         y = 0
         for char in self.chars:
-            srf = self.font.render("d", 1, (180, 180, 180))
-            if x + srf.get_width() > self.w:
+            srf = self.font.render(f"{chr(char)} ", 1, (180, 180, 180))
+            if x + 1.5 * srf.get_width() > self.w:
                 x = 0
                 y += srf.get_height()
             x += srf.get_width()
