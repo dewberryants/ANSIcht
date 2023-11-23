@@ -46,6 +46,29 @@ class Image:
         self.redraw()
 
 
+class CharacterMap:
+    def __init__(self, w, h, font: pygame.font.Font):
+        self.w, self.h = w, h
+        self.surface = None
+        self.font = font
+        # 222 standard printable ASCII chars
+        self.chars = list(range(32, 127)) + list(range(128, 255))
+        self.redraw()
+
+    def redraw(self):
+        self.surface = pygame.Surface((self.w, self.h))
+        self.surface.fill((20, 20, 20))
+        x = 0
+        y = 0
+        for char in self.chars:
+            srf = self.font.render("d", 1, (180, 180, 180))
+            if x + srf.get_width() > self.w:
+                x = 0
+                y += srf.get_height()
+            x += srf.get_width()
+            self.surface.blit(srf, (x, y))
+
+
 class Palette:
     def __init__(self, w, h):
         self.marker = (0, 0)
@@ -94,14 +117,6 @@ class Editor:
         # Clock
         self.clock = pygame.time.Clock()
 
-        # Default image
-        self.image = Image(120, 40, 10)
-        self.cursor = None
-        self.mx, self.my = (self.screen.get_width() - 320) / 2, (self.screen.get_height() - 32) / 2
-
-        # Default Palette
-        self.palette = Palette(320 * 0.9, (self.screen.get_height() - 32) / 2)
-
         # Font
         # Try some of these before giving up
         self.font = pygame.font.SysFont(pygame.font.get_default_font(), 21)
@@ -112,7 +127,24 @@ class Editor:
                 self.font = pygame.font.Font(path, 16)
                 break
 
+        # Default image
+        self.image = Image(120, 40, 10)
+        self.cursor = None
+        self.mx, self.my = (self.screen.get_width() - 320) / 2, (self.screen.get_height() - 32) / 2
+
+        # Default Palette
+        self.palette = Palette(320 * 0.9, (self.screen.get_height() - 32) / 2 - (0.8 / 3 + 0.1) * 320)
+
+        # Default Character Map
+        self.char_map = CharacterMap(320 * 0.9, (self.screen.get_height() - 32) / 2 - (0.8 / 3 + 0.1) * 320, self.font)
+
     def resize(self):
+        w, h = 320 * 0.9, (self.screen.get_height() - 32) / 2 - (0.8 / 3 + 0.1) * 320
+        self.palette.sq = int(w / self.palette.cols)
+        self.palette.h = h
+        self.palette.redraw()
+        self.char_map.w, self.char_map.h = w, h
+        self.char_map.redraw()
         pass
 
     def zoom(self, event):
@@ -139,29 +171,26 @@ class Editor:
         pygame.draw.rect(self.screen, (160, 160, 160),
                          (x + 3 * w(.05) + 2 * w(.8 / 3), w(.05), w(.8 / 3), w(.8 / 3)))
 
-        # Two squares for the FG/BG palette and symbol table
-        pygame.draw.rect(self.screen, (160, 160, 160),
-                         (x + w(.05), 2 * w(.05) + w(.8 / 3), w(0.9), h(0.5) - w(.8 / 3)))
-        pygame.draw.rect(self.screen, (160, 160, 160),
-                         (x + w(.05),
-                          3 * w(.05) + w(.8 / 3) + h(0.5) - w(.8 / 3),
-                          w(0.9),
-                          h(0.5) - w(.8 / 3)))
-
-        self.screen.blit(self.palette.surface, (x + w(0.05), w(0.05)))
+        # FG/BG palette and symbol table
+        self.screen.blit(self.palette.surface, (x + w(0.05), w(0.1) + w(.8 / 3)))
+        self.screen.blit(self.char_map.surface, (x + w(0.05), w(0.15) + h(0.5)))
 
     def mouse(self, event):
         if event.button == 1:
             w, h = self.screen.get_width(), self.screen.get_height()
             x, y = event.pos
+
             # Palette
             sx = (w - 320) + .05 * 320
-            sy = .05 * 320
-            if sx < x < w - .05 * 320 and sy < y < (h - 32) / 2:
+            sy = (0.8 / 3 + .1) * 320
+            if sx < x < w - .05 * 320 and sy < y < sy + self.palette.h:
                 mapped_x, mapped_y = int((x - sx) / self.palette.sq), int((y - sy) / self.palette.sq)
-                print((x - sx) / self.palette.sq, (y - sy) / self.palette.sq)
-                print(mapped_x, mapped_y)
                 self.palette.select(mapped_x, mapped_y)
+
+            # Character Map
+            sy = (0.8 / 3 + .1) * 320 + self.palette.h
+            if sx < x < w - .05 * 320 and sy < y < sy + self.char_map.h:
+                pass
 
     def redraw(self):
         w, h = self.screen.get_width(), self.screen.get_height()
