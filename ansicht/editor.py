@@ -5,7 +5,7 @@ import numpy as np
 
 
 class Image:
-    def __init__(self, w, h, px):
+    def __init__(self, w, h, px, font: pygame.font.Font):
         self.draw_border = False
         self.px = px
         self.w, self.h = w, h
@@ -13,6 +13,7 @@ class Image:
         self.g = np.zeros(w * h, dtype="int32")
         self.b = np.zeros(w * h, dtype="int32")
         self.s = np.zeros(w * h, dtype=("str", 1))
+        self.font = font
         self.surface = None
         self.redraw()
 
@@ -21,22 +22,32 @@ class Image:
         self.surface = pygame.Surface((self.w * self.px, self.h * py))
         for row in range(self.h):
             for column in range(self.w):
-                r, g, b = (int(self.r[row * self.w + column]),
-                           int(self.g[row * self.w + column]),
-                           int(self.b[row * self.w + column]))
+                r, g, b, s = (int(self.r[row * self.w + column]),
+                              int(self.g[row * self.w + column]),
+                              int(self.b[row * self.w + column]),
+                              str(self.s[row * self.w + column]))
                 pygame.draw.rect(self.surface, (r, g, b),
                                  (column * self.px, row * py, self.px, py))
+                if s != " ":
+                    srf = self.font.render(s, 1, (255, 255, 255))
+                    srf = pygame.transform.scale(srf, (self.px, py))
+                    self.surface.blit(srf, ((column + .25) * self.px, (row + .25) * py, self.px + 1, py + 1))
                 if self.draw_border:
                     pygame.draw.rect(self.surface, (80, 80, 80),
                                      (column * self.px, row * py, self.px, py),
                                      width=1)
 
-    def set_color(self, x, y, r, g, b):
+    def set_pixel(self, x, y, r, g, b, s):
         self.r[y * self.w + x] = r
         self.g[y * self.w + x] = g
         self.b[y * self.w + x] = b
+        self.s[y * self.w + x] = s
         py = 2 * self.px
         pygame.draw.rect(self.surface, (r, g, b), (x * self.px, y * py, self.px + 1, py + 1))
+        if s != " ":
+            srf = self.font.render(s, 1, (255, 255, 255))
+            srf = pygame.transform.scale(srf, (self.px, py))
+            self.surface.blit(srf, ((x + .25) * self.px, (y + .25) * py, self.px + 1, py + 1))
         if self.draw_border:
             pygame.draw.rect(self.surface, (80, 80, 80), (x * self.px, y * py, self.px + 1, py + 1), width=1)
 
@@ -51,22 +62,37 @@ class CharacterMap:
         self.w, self.h = w, h
         self.surface = None
         self.font = font
-        # 222 standard printable ASCII chars
-        self.chars = list(range(32, 127)) + list(range(128, 255))
+        self.cols = 12
+        self.sq = int(w / self.cols)
+        # Ugly hardcoded characters right now, load these externally later
+        self.chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+        self.chars += "1234567890!§$%&/()=?`´+#-.,;:_'*²³{[]}\\~@<>|^°"
+        self.marker = (0, 0)
+        self.selected = " "
         self.redraw()
 
     def redraw(self):
         self.surface = pygame.Surface((self.w, self.h))
-        self.surface.fill((20, 20, 20))
+        self.surface.fill((30, 35, 40))
         x = 0
         y = 0
         for char in self.chars:
-            srf = self.font.render(f"{chr(char)} ", 1, (180, 180, 180))
-            if x + 1.5 * srf.get_width() > self.w:
+            srf = self.font.render(f"{char} ", 1, (180, 180, 180))
+            if int(x) / self.sq == self.cols:
                 x = 0
-                y += srf.get_height()
-            x += srf.get_width()
-            self.surface.blit(srf, (x, y))
+                y += self.sq
+            self.surface.blit(srf, (x + .25 * self.sq, y + .25 * self.sq))
+            if (x / self.sq, y / self.sq) == self.marker:
+                pygame.draw.rect(self.surface, (0, 255, 0), (x, y, self.sq, self.sq), width=1)
+            x += self.sq
+
+    def select(self, x, y):
+        try:
+            self.marker = (x, y)
+            self.selected = self.chars[y * self.cols + x]
+            self.redraw()
+        except IndexError:
+            pass
 
 
 class Palette:
@@ -87,7 +113,8 @@ class Palette:
 
     def redraw(self):
         rows = round(self.h / self.sq)
-        self.surface = pygame.Surface((self.cols * self.sq, rows * self.sq))
+        self.surface = pygame.Surface((self.cols * self.sq, self.h))
+        self.surface.fill((30, 35, 40))
         colors = self.cols * rows
         for row in range(rows):
             for column in range(self.cols):
@@ -128,12 +155,12 @@ class Editor:
                 break
 
         # Default image
-        self.image = Image(120, 40, 10)
+        self.image = Image(120, 40, self.font.size("█")[0], self.font)
         self.cursor = None
         self.mx, self.my = (self.screen.get_width() - 320) / 2, (self.screen.get_height() - 32) / 2
 
         # Default Palette
-        self.palette = Palette(320 * 0.9, (self.screen.get_height() - 32) / 2 - (0.8 / 3 + 0.1) * 320)
+        self.palette = Palette(320 * 0.9, (self.screen.get_height() - 32) / 2 - 0.1 * 320)
 
         # Default Character Map
         self.char_map = CharacterMap(320 * 0.9, (self.screen.get_height() - 32) / 2 - (0.8 / 3 + 0.1) * 320, self.font)
@@ -164,16 +191,16 @@ class Editor:
 
         # Three squares at the top for the drawing tools:
         # Dot, Line, Square
-        pygame.draw.rect(self.screen, (160, 160, 160),
+        pygame.draw.rect(self.screen, (30, 35, 40),
                          (x + w(.05), w(.05), w(.8 / 3), w(.8 / 3)))
-        pygame.draw.rect(self.screen, (160, 160, 160),
+        pygame.draw.rect(self.screen, (30, 35, 40),
                          (x + 2 * w(.05) + w(.8 / 3), w(.05), w(.8 / 3), w(.8 / 3)))
-        pygame.draw.rect(self.screen, (160, 160, 160),
+        pygame.draw.rect(self.screen, (30, 35, 40),
                          (x + 3 * w(.05) + 2 * w(.8 / 3), w(.05), w(.8 / 3), w(.8 / 3)))
 
         # FG/BG palette and symbol table
         self.screen.blit(self.palette.surface, (x + w(0.05), w(0.1) + w(.8 / 3)))
-        self.screen.blit(self.char_map.surface, (x + w(0.05), w(0.15) + h(0.5)))
+        self.screen.blit(self.char_map.surface, (x + w(0.05), w(0.15) + w(.8 / 3) + self.palette.h))
 
     def mouse(self, event):
         if event.button == 1:
@@ -188,9 +215,10 @@ class Editor:
                 self.palette.select(mapped_x, mapped_y)
 
             # Character Map
-            sy = (0.8 / 3 + .1) * 320 + self.palette.h
+            sy = (0.8 / 3 + .15) * 320 + self.palette.h
             if sx < x < w - .05 * 320 and sy < y < sy + self.char_map.h:
-                pass
+                mapped_x, mapped_y = int((x - sx) / self.char_map.sq), int((y - sy) / self.char_map.sq)
+                self.char_map.select(mapped_x, mapped_y)
 
     def redraw(self):
         w, h = self.screen.get_width(), self.screen.get_height()
@@ -220,9 +248,9 @@ class Editor:
             # Are we drawing?
             if pygame.mouse.get_pressed(3)[0]:
                 r, g, b = self.palette.selected
-                self.image.set_color(mapped_x, mapped_y, r, g, b)
+                self.image.set_pixel(mapped_x, mapped_y, r, g, b, self.char_map.selected)
             elif pygame.mouse.get_pressed(3)[2]:
-                self.image.set_color(mapped_x, mapped_y, 0, 0, 0)
+                self.image.set_pixel(mapped_x, mapped_y, 0, 0, 0, " ")
             # Are we moving the image around?
             elif pygame.mouse.get_pressed(3)[1]:
                 self.mx += 0.5 * dx
