@@ -1,183 +1,8 @@
 import sys
 import pygame
 
-import numpy as np
-
-
-class Image:
-    def __init__(self, w, h, font: pygame.font.Font):
-        self.draw_border = False
-        fs = font.size(" ")
-        self.px = fs[0]
-        self.aspect = fs[1] / fs[0]
-        self.w, self.h = w, h
-        self.bg_r = np.zeros(w * h, dtype="int32")
-        self.bg_g = np.zeros(w * h, dtype="int32")
-        self.bg_b = np.zeros(w * h, dtype="int32")
-        self.fg_r = np.zeros(w * h, dtype="int32")
-        self.fg_g = np.zeros(w * h, dtype="int32")
-        self.fg_b = np.zeros(w * h, dtype="int32")
-        self.s = np.zeros(w * h, dtype=("str", 1))
-        self.font = font
-        self.surface = None
-        self.redraw()
-
-    def redraw(self):
-        py = round(self.aspect * self.px)
-        self.surface = pygame.Surface((self.w * self.px, self.h * py))
-        for row in range(self.h):
-            for column in range(self.w):
-                r, g, b, s = (int(self.bg_r[row * self.w + column]),
-                              int(self.bg_g[row * self.w + column]),
-                              int(self.bg_b[row * self.w + column]),
-                              str(self.s[row * self.w + column]))
-                pygame.draw.rect(self.surface, (r, g, b),
-                                 (column * self.px, row * py, self.px, py))
-                if s != " ":
-                    r, g, b = (int(self.fg_r[row * self.w + column]),
-                               int(self.fg_g[row * self.w + column]),
-                               int(self.fg_b[row * self.w + column]))
-                    srf = self.font.render(s, 1, (r, g, b))
-                    srf = pygame.transform.scale(srf, (self.px, py))
-                    self.surface.blit(srf, (column * self.px, row * py, self.px + 1, py + 1))
-                if self.draw_border:
-                    pygame.draw.rect(self.surface, (80, 80, 80),
-                                     (column * self.px, row * py, self.px, py),
-                                     width=1)
-
-    def set_pixel(self, x, y, fg, bg, s):
-        r, g, b = bg
-        self.bg_r[y * self.w + x] = r
-        self.bg_g[y * self.w + x] = g
-        self.bg_b[y * self.w + x] = b
-        self.s[y * self.w + x] = s
-        py = round(self.px * self.aspect)
-        pygame.draw.rect(self.surface, (r, g, b), (x * self.px, y * py, self.px + 1, py + 1))
-        if s != " ":
-            r, g, b, = fg
-            self.fg_r[y * self.w + x] = r
-            self.fg_g[y * self.w + x] = g
-            self.fg_b[y * self.w + x] = b
-            srf = self.font.render(s, 1, (r, g, b))
-            srf = pygame.transform.scale(srf, (self.px, py))
-            self.surface.blit(srf, (x * self.px, y * py, self.px + 1, py + 1))
-        if self.draw_border:
-            pygame.draw.rect(self.surface, (80, 80, 80), (x * self.px, y * py, self.px + 1, py + 1), width=1)
-
-    def resize(self, factor):
-        # Smallest zoom distance is 1x2, so we don't lose the actual pixel ratio
-        self.px = round(self.px * factor) if round(self.px * factor) >= 1 else 1
-        self.redraw()
-
-
-class CharacterMap:
-    def __init__(self, w, h, font: pygame.font.Font):
-        self.w, self.h = w, h
-        self.surface = None
-        self.font = font
-        self.cols = 12
-        self.sq = int(w / self.cols)
-        # Ugly hardcoded characters right now, load these externally later
-        self.chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-        self.chars += "1234567890!§$%&/()=?`´+#-.,;:_'*²³{[]}\\~@<>|^°"
-        self.chars += "─━│┃┄┅┆┇┈┉┊┋┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳┴┵" \
-                      "┶┷┸┹┺┻┼┽┾┿╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬" \
-                      "╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿▀▁▂▃▄▅▆▇█▉▊▋▌▍▎▐░▒▓▔▕▖▗▘▙▚▛▜▝▞▟"
-        self.marker = (0, 0)
-        self.selected = " "
-        self.redraw()
-
-    def redraw(self):
-        self.surface = pygame.Surface((self.w, self.h))
-        self.surface.fill((30, 35, 40))
-        x = 0
-        y = 0
-        for char in self.chars:
-            srf = self.font.render(f"{char} ", 1, (180, 180, 180))
-            if int(x) / self.sq == self.cols:
-                x = 0
-                y += self.sq
-            self.surface.blit(srf, (x + .25 * self.sq, y + .25 * self.sq))
-            if (x / self.sq, y / self.sq) == self.marker:
-                pygame.draw.rect(self.surface, (0, 255, 0), (x, y, self.sq, self.sq), width=1)
-            x += self.sq
-
-    def select(self, x, y):
-        try:
-            self.marker = (x, y)
-            self.selected = self.chars[y * self.cols + x]
-            self.redraw()
-        except IndexError:
-            pass
-
-
-class Palette:
-    def __init__(self, w, h):
-        self.marker_bg = (0, 0)
-        self.marker_fg = (0, 0)
-        self.selected_bg = (0, 0, 0)
-        self.selected_fg = (0, 0, 0)
-        self.cols = 12
-        self.sq = int(w / self.cols)
-        self.h = h
-        self.surface = None
-        self.redraw()
-
-    def value(self, index):
-        n = self.cols * int(self.h / self.sq)
-        if index < self.cols:
-            # First row is b&w
-            v = round(index * 255 / self.cols)
-            return v, v, v
-        elif index < n:
-            index -= self.cols
-            n -= self.cols
-            # Rest of the rows are distributed rgb
-            sec = 3 * index / n
-            if 0 <= sec < 1:
-                g = 255 * 3 * index / n
-                r = 255 - g
-                return r, g, 0
-            elif 1 <= sec < 2:
-                b = 255 * 3 * (index - n / 3) / n
-                g = 255 - b
-                return 0, g, b
-            elif 2 <= sec < 3:
-                r = 255 * 3 * (index - 2 * n / 3) / n
-                b = 255 - r
-                return r, 0, b
-            else:
-                return 255, 255, 255
-        else:
-            # Something went wrong
-            return 0, 0, 0
-
-    def select(self, x, y, fg=False):
-        r, g, b = self.value(self.cols * y + x)
-        if fg:
-            self.selected_fg = (r, g, b)
-            self.marker_fg = (x, y)
-        else:
-            self.selected_bg = (r, g, b)
-            self.marker_bg = (x, y)
-        self.redraw()
-
-    def redraw(self):
-        rows = round(self.h / self.sq)
-        self.surface = pygame.Surface((self.cols * self.sq, self.h))
-        self.surface.fill((30, 35, 40))
-        for row in range(rows):
-            for column in range(self.cols):
-                r, g, b = self.value(row * self.cols + column)
-                pygame.draw.rect(self.surface, (r, g, b), (column * self.sq, row * self.sq, self.sq, self.sq))
-                if (column, row) == self.marker_bg:
-                    pygame.draw.rect(self.surface, (0, 255, 0),
-                                     (column * self.sq, row * self.sq, self.sq, self.sq),
-                                     width=1)
-                elif (column, row) == self.marker_fg:
-                    pygame.draw.rect(self.surface, (0, 0, 255),
-                                     (column * self.sq, row * self.sq, self.sq, self.sq),
-                                     width=1)
+from image import Image
+from ui import Palette, CharacterMap
 
 
 class Editor:
@@ -207,19 +32,23 @@ class Editor:
                 self.font = pygame.font.Font(path, 16)
                 break
 
+        # Icon Square sizes
+        self.w_icons = 0.4 / 3 * 320
+
         # Default image
         self.image = Image(120, 40, self.font)
         self.cursor = None
         self.mx, self.my = (self.screen.get_width() - 320) / 2, (self.screen.get_height() - 32) / 2
 
         # Default Palette
-        self.palette = Palette(320 * 0.9, (self.screen.get_height() - 32) / 2 - 0.1 * 320)
+        self.palette = Palette(320 * 0.9, (self.screen.get_height() - 32) / 2 - .1 * 320)
 
         # Default Character Map
-        self.char_map = CharacterMap(320 * 0.9, (self.screen.get_height() - 32) / 2 - (0.8 / 3 + 0.1) * 320, self.font)
+        self.char_map = CharacterMap(320 * .9,
+                                     (self.screen.get_height() - 32) / 2 - .1 * 320 - self.w_icons, self.font)
 
     def resize(self):
-        w, h = 320 * 0.9, (self.screen.get_height() - 32) / 2 - (0.8 / 3 + 0.1) * 320
+        w, h = 320 * 0.9, (self.screen.get_height() - 32) / 2 - .1 * 320 - self.w_icons
         self.palette.sq = int(w / self.palette.cols)
         self.palette.h = h
         self.palette.redraw()
@@ -236,24 +65,19 @@ class Editor:
         def w(frac):
             return int(width * frac)
 
-        def h(frac):
-            return int(height * frac)
-
         # Basic Background Fill
         self.screen.fill((60, 65, 70), (x, 0, width, height))
 
         # Three squares at the top for the drawing tools:
         # Dot, Line, Square
         pygame.draw.rect(self.screen, (30, 35, 40),
-                         (x + w(.05), w(.05), w(.8 / 3), w(.8 / 3)))
+                         (x + w(.05), w(.05), self.w_icons, self.w_icons))
         pygame.draw.rect(self.screen, (30, 35, 40),
-                         (x + 2 * w(.05) + w(.8 / 3), w(.05), w(.8 / 3), w(.8 / 3)))
-        pygame.draw.rect(self.screen, (30, 35, 40),
-                         (x + 3 * w(.05) + 2 * w(.8 / 3), w(.05), w(.8 / 3), w(.8 / 3)))
+                         (x + 2 * w(.05) + self.w_icons, w(.05), self.w_icons, self.w_icons))
 
         # FG/BG palette and symbol table
-        self.screen.blit(self.palette.surface, (x + w(0.05), w(0.1) + w(.8 / 3)))
-        self.screen.blit(self.char_map.surface, (x + w(0.05), w(0.15) + w(.8 / 3) + self.palette.h))
+        self.screen.blit(self.palette.surface, (x + w(0.05), w(0.1) + self.w_icons))
+        self.screen.blit(self.char_map.surface, (x + w(0.05), w(0.15) + self.w_icons + self.palette.h))
 
     def mouse(self, event):
         if event.button == 1 or event.button == 3:
@@ -262,13 +86,13 @@ class Editor:
 
             # Palette
             sx = (w - 320) + .05 * 320
-            sy = (0.8 / 3 + .1) * 320
+            sy = .1 * 320 + self.w_icons
             if sx < x < w - .05 * 320 and sy < y < sy + self.palette.h:
                 mapped_x, mapped_y = int((x - sx) / self.palette.sq), int((y - sy) / self.palette.sq)
                 self.palette.select(mapped_x, mapped_y, event.button == 3)
 
             # Character Map
-            sy = (0.8 / 3 + .15) * 320 + self.palette.h
+            sy = .15 * 320 + self.w_icons + self.palette.h
             if sx < x < w - .05 * 320 and sy < y < sy + self.char_map.h:
                 mapped_x, mapped_y = int((x - sx) / self.char_map.sq), int((y - sy) / self.char_map.sq)
                 self.char_map.select(mapped_x, mapped_y)
