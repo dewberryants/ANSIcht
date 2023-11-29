@@ -55,6 +55,9 @@ class Image:
         pygame.draw.rect(self.surface, (r, g, b), (x * self.px, y * py, self.px + 1, py + 1))
         if s != " ":
             r, g, b, = fg
+            self.fg_r[y * self.w + x] = r
+            self.fg_g[y * self.w + x] = g
+            self.fg_b[y * self.w + x] = b
             srf = self.font.render(s, 1, (r, g, b))
             srf = pygame.transform.scale(srf, (self.px, py))
             self.surface.blit(srf, (x * self.px, y * py, self.px + 1, py + 1))
@@ -114,19 +117,48 @@ class Palette:
         self.marker_fg = (0, 0)
         self.selected_bg = (0, 0, 0)
         self.selected_fg = (0, 0, 0)
-        self.cols = 6
+        self.cols = 12
         self.sq = int(w / self.cols)
         self.h = h
         self.surface = None
         self.redraw()
 
+    def value(self, index):
+        n = self.cols * int(self.h / self.sq)
+        if index < self.cols:
+            # First row is b&w
+            v = round(index * 255 / self.cols)
+            return v, v, v
+        elif index < n:
+            index -= self.cols
+            n -= self.cols
+            # Rest of the rows are distributed rgb
+            sec = 3 * index / n
+            if 0 <= sec < 1:
+                g = 255 * 3 * index / n
+                r = 255 - g
+                return r, g, 0
+            elif 1 <= sec < 2:
+                b = 255 * 3 * (index - n / 3) / n
+                g = 255 - b
+                return 0, g, b
+            elif 2 <= sec < 3:
+                r = 255 * 3 * (index - 2 * n / 3) / n
+                b = 255 - r
+                return r, 0, b
+            else:
+                return 255, 255, 255
+        else:
+            # Something went wrong
+            return 0, 0, 0
+
     def select(self, x, y, fg=False):
-        v = round((self.cols * y + x) * 255 / (self.cols * round(self.h / self.sq)))
+        r, g, b = self.value(self.cols * y + x)
         if fg:
-            self.selected_fg = (v, v, v)
+            self.selected_fg = (r, g, b)
             self.marker_fg = (x, y)
         else:
-            self.selected_bg = (v, v, v)
+            self.selected_bg = (r, g, b)
             self.marker_bg = (x, y)
         self.redraw()
 
@@ -134,11 +166,9 @@ class Palette:
         rows = round(self.h / self.sq)
         self.surface = pygame.Surface((self.cols * self.sq, self.h))
         self.surface.fill((30, 35, 40))
-        colors = self.cols * rows
         for row in range(rows):
             for column in range(self.cols):
-                r = round((row * self.cols + column) * 255 / colors)
-                g, b = r, r
+                r, g, b = self.value(row * self.cols + column)
                 pygame.draw.rect(self.surface, (r, g, b), (column * self.sq, row * self.sq, self.sq, self.sq))
                 if (column, row) == self.marker_bg:
                     pygame.draw.rect(self.surface, (0, 255, 0),
