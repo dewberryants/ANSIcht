@@ -5,9 +5,11 @@ import numpy as np
 
 
 class Image:
-    def __init__(self, w, h, px, font: pygame.font.Font):
+    def __init__(self, w, h, font: pygame.font.Font):
         self.draw_border = False
-        self.px = px
+        fs = font.size(" ")
+        self.px = fs[0]
+        self.aspect = fs[1] / fs[0]
         self.w, self.h = w, h
         self.r = np.zeros(w * h, dtype="int32")
         self.g = np.zeros(w * h, dtype="int32")
@@ -18,7 +20,7 @@ class Image:
         self.redraw()
 
     def redraw(self):
-        py = 2 * self.px
+        py = round(self.aspect * self.px)
         self.surface = pygame.Surface((self.w * self.px, self.h * py))
         for row in range(self.h):
             for column in range(self.w):
@@ -31,7 +33,7 @@ class Image:
                 if s != " ":
                     srf = self.font.render(s, 1, (255, 255, 255))
                     srf = pygame.transform.scale(srf, (self.px, py))
-                    self.surface.blit(srf, ((column + .25) * self.px, (row + .25) * py, self.px + 1, py + 1))
+                    self.surface.blit(srf, (column * self.px, row * py, self.px + 1, py + 1))
                 if self.draw_border:
                     pygame.draw.rect(self.surface, (80, 80, 80),
                                      (column * self.px, row * py, self.px, py),
@@ -42,12 +44,12 @@ class Image:
         self.g[y * self.w + x] = g
         self.b[y * self.w + x] = b
         self.s[y * self.w + x] = s
-        py = 2 * self.px
+        py = round(self.px * self.aspect)
         pygame.draw.rect(self.surface, (r, g, b), (x * self.px, y * py, self.px + 1, py + 1))
         if s != " ":
             srf = self.font.render(s, 1, (255, 255, 255))
             srf = pygame.transform.scale(srf, (self.px, py))
-            self.surface.blit(srf, ((x + .25) * self.px, (y + .25) * py, self.px + 1, py + 1))
+            self.surface.blit(srf, (x * self.px, y * py, self.px + 1, py + 1))
         if self.draw_border:
             pygame.draw.rect(self.surface, (80, 80, 80), (x * self.px, y * py, self.px + 1, py + 1), width=1)
 
@@ -67,6 +69,7 @@ class CharacterMap:
         # Ugly hardcoded characters right now, load these externally later
         self.chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
         self.chars += "1234567890!§$%&/()=?`´+#-.,;:_'*²³{[]}\\~@<>|^°"
+        self.chars += "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀"
         self.marker = (0, 0)
         self.selected = " "
         self.redraw()
@@ -155,7 +158,7 @@ class Editor:
                 break
 
         # Default image
-        self.image = Image(120, 40, self.font.size("█")[0], self.font)
+        self.image = Image(120, 40, self.font)
         self.cursor = None
         self.mx, self.my = (self.screen.get_width() - 320) / 2, (self.screen.get_height() - 32) / 2
 
@@ -226,7 +229,7 @@ class Editor:
         self.screen.fill((30, 33, 35))
 
         # Image Grid
-        psx, psy = self.image.px, 2 * self.image.px
+        psx, psy = self.image.px, round(self.image.aspect * self.image.px)
         sx, sy = self.mx - self.image.w / 2 * psx, self.my - self.image.h / 2 * psy
         self.screen.blit(self.image.surface, (sx, sy))
 
