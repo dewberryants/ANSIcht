@@ -11,9 +11,12 @@ class Image:
         self.px = fs[0]
         self.aspect = fs[1] / fs[0]
         self.w, self.h = w, h
-        self.r = np.zeros(w * h, dtype="int32")
-        self.g = np.zeros(w * h, dtype="int32")
-        self.b = np.zeros(w * h, dtype="int32")
+        self.bg_r = np.zeros(w * h, dtype="int32")
+        self.bg_g = np.zeros(w * h, dtype="int32")
+        self.bg_b = np.zeros(w * h, dtype="int32")
+        self.fg_r = np.zeros(w * h, dtype="int32")
+        self.fg_g = np.zeros(w * h, dtype="int32")
+        self.fg_b = np.zeros(w * h, dtype="int32")
         self.s = np.zeros(w * h, dtype=("str", 1))
         self.font = font
         self.surface = None
@@ -24,14 +27,17 @@ class Image:
         self.surface = pygame.Surface((self.w * self.px, self.h * py))
         for row in range(self.h):
             for column in range(self.w):
-                r, g, b, s = (int(self.r[row * self.w + column]),
-                              int(self.g[row * self.w + column]),
-                              int(self.b[row * self.w + column]),
+                r, g, b, s = (int(self.bg_r[row * self.w + column]),
+                              int(self.bg_g[row * self.w + column]),
+                              int(self.bg_b[row * self.w + column]),
                               str(self.s[row * self.w + column]))
                 pygame.draw.rect(self.surface, (r, g, b),
                                  (column * self.px, row * py, self.px, py))
                 if s != " ":
-                    srf = self.font.render(s, 1, (255, 255, 255))
+                    r, g, b = (int(self.fg_r[row * self.w + column]),
+                               int(self.fg_g[row * self.w + column]),
+                               int(self.fg_b[row * self.w + column]))
+                    srf = self.font.render(s, 1, (r, g, b))
                     srf = pygame.transform.scale(srf, (self.px, py))
                     self.surface.blit(srf, (column * self.px, row * py, self.px + 1, py + 1))
                 if self.draw_border:
@@ -39,15 +45,17 @@ class Image:
                                      (column * self.px, row * py, self.px, py),
                                      width=1)
 
-    def set_pixel(self, x, y, r, g, b, s):
-        self.r[y * self.w + x] = r
-        self.g[y * self.w + x] = g
-        self.b[y * self.w + x] = b
+    def set_pixel(self, x, y, fg, bg, s):
+        r, g, b = bg
+        self.bg_r[y * self.w + x] = r
+        self.bg_g[y * self.w + x] = g
+        self.bg_b[y * self.w + x] = b
         self.s[y * self.w + x] = s
         py = round(self.px * self.aspect)
         pygame.draw.rect(self.surface, (r, g, b), (x * self.px, y * py, self.px + 1, py + 1))
         if s != " ":
-            srf = self.font.render(s, 1, (255, 255, 255))
+            r, g, b, = fg
+            srf = self.font.render(s, 1, (r, g, b))
             srf = pygame.transform.scale(srf, (self.px, py))
             self.surface.blit(srf, (x * self.px, y * py, self.px + 1, py + 1))
         if self.draw_border:
@@ -69,7 +77,9 @@ class CharacterMap:
         # Ugly hardcoded characters right now, load these externally later
         self.chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
         self.chars += "1234567890!§$%&/()=?`´+#-.,;:_'*²³{[]}\\~@<>|^°"
-        self.chars += "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀"
+        self.chars += "─━│┃┄┅┆┇┈┉┊┋┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳┴┵" \
+                      "┶┷┸┹┺┻┼┽┾┿╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬" \
+                      "╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿▀▁▂▃▄▅▆▇█▉▊▋▌▍▎▐░▒▓▔▕▖▗▘▙▚▛▜▝▞▟"
         self.marker = (0, 0)
         self.selected = " "
         self.redraw()
@@ -100,18 +110,24 @@ class CharacterMap:
 
 class Palette:
     def __init__(self, w, h):
-        self.marker = (0, 0)
-        self.selected = (0, 0, 0)
+        self.marker_bg = (0, 0)
+        self.marker_fg = (0, 0)
+        self.selected_bg = (0, 0, 0)
+        self.selected_fg = (0, 0, 0)
         self.cols = 6
         self.sq = int(w / self.cols)
         self.h = h
         self.surface = None
         self.redraw()
 
-    def select(self, x, y):
+    def select(self, x, y, fg=False):
         v = round((self.cols * y + x) * 255 / (self.cols * round(self.h / self.sq)))
-        self.selected = (v, v, v)
-        self.marker = (x, y)
+        if fg:
+            self.selected_fg = (v, v, v)
+            self.marker_fg = (x, y)
+        else:
+            self.selected_bg = (v, v, v)
+            self.marker_bg = (x, y)
         self.redraw()
 
     def redraw(self):
@@ -124,8 +140,12 @@ class Palette:
                 r = round((row * self.cols + column) * 255 / colors)
                 g, b = r, r
                 pygame.draw.rect(self.surface, (r, g, b), (column * self.sq, row * self.sq, self.sq, self.sq))
-                if (column, row) == self.marker:
+                if (column, row) == self.marker_bg:
                     pygame.draw.rect(self.surface, (0, 255, 0),
+                                     (column * self.sq, row * self.sq, self.sq, self.sq),
+                                     width=1)
+                elif (column, row) == self.marker_fg:
+                    pygame.draw.rect(self.surface, (0, 0, 255),
                                      (column * self.sq, row * self.sq, self.sq, self.sq),
                                      width=1)
 
@@ -206,7 +226,7 @@ class Editor:
         self.screen.blit(self.char_map.surface, (x + w(0.05), w(0.15) + w(.8 / 3) + self.palette.h))
 
     def mouse(self, event):
-        if event.button == 1:
+        if event.button == 1 or event.button == 3:
             w, h = self.screen.get_width(), self.screen.get_height()
             x, y = event.pos
 
@@ -215,7 +235,7 @@ class Editor:
             sy = (0.8 / 3 + .1) * 320
             if sx < x < w - .05 * 320 and sy < y < sy + self.palette.h:
                 mapped_x, mapped_y = int((x - sx) / self.palette.sq), int((y - sy) / self.palette.sq)
-                self.palette.select(mapped_x, mapped_y)
+                self.palette.select(mapped_x, mapped_y, event.button == 3)
 
             # Character Map
             sy = (0.8 / 3 + .15) * 320 + self.palette.h
@@ -250,10 +270,10 @@ class Editor:
                                               1, (200, 200, 200)), (16, h - 24))
             # Are we drawing?
             if pygame.mouse.get_pressed(3)[0]:
-                r, g, b = self.palette.selected
-                self.image.set_pixel(mapped_x, mapped_y, r, g, b, self.char_map.selected)
+                self.image.set_pixel(mapped_x, mapped_y,
+                                     self.palette.selected_fg, self.palette.selected_bg, self.char_map.selected)
             elif pygame.mouse.get_pressed(3)[2]:
-                self.image.set_pixel(mapped_x, mapped_y, 0, 0, 0, " ")
+                self.image.set_pixel(mapped_x, mapped_y, (0, 0, 0), (0, 0, 0), " ")
             # Are we moving the image around?
             elif pygame.mouse.get_pressed(3)[1]:
                 self.mx += 0.5 * dx
