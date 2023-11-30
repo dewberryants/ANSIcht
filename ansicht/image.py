@@ -85,7 +85,7 @@ class Image:
         self.redraw()
 
     def save_to_file(self, path):
-        with open(path, "w") as ofile:
+        with open(path, "w", encoding="utf-8") as ofile:
             last_fg = ""
             last_bg = ""
             for n in range(self.w * self.h):

@@ -127,13 +127,16 @@ class Editor:
             sx = (w - 320) + .1 * 320 + self.w_icons
             if sx < x < sx + self.w_icons and sy < y < sy + self.w_icons:
                 f = filedialog.asksaveasfilename(confirmoverwrite=True,
-                                                 filetypes=[(".ans", "ANSI File")],
-                                                 title="Save As...")
+                                                 filetypes=[("ANSI File", "*.ans")],
+                                                 title="Save As...",
+                                                 defaultextension="ans")
                 try:
                     self.image.save_to_file(str(f))
+                    print(f"Saved to file '{f}'!")
                 except IOError:
                     print(f"Could not save to file '{f}'!")
-                print(f"Saved to file '{f}'!")
+                except UnicodeEncodeError:
+                    print(f"Could not encode character. This should not happen :(")
 
     def redraw(self):
         w, h = self.screen.get_width(), self.screen.get_height()
