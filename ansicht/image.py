@@ -83,3 +83,21 @@ class Image:
         # Smallest zoom distance is 1x2, so we don't lose the actual pixel ratio
         self.px = round(self.px * factor) if round(self.px * factor) >= 1 else 1
         self.redraw()
+
+    def save_to_file(self, path):
+        with open(path, "w") as ofile:
+            last_fg = ""
+            last_bg = ""
+            for n in range(self.w * self.h):
+                s = " " if str(self.s[n]) == "" else str(self.s[n])
+                fg = f"\x1b[38;2;{self.fg_r[n]};{self.fg_g[n]};{self.fg_b[n]}m"
+                bg = f"\x1b[48;2;{self.bg_r[n]};{self.bg_g[n]};{self.bg_b[n]}m"
+                if fg != last_fg:
+                    s = fg + s
+                if bg != last_bg:
+                    s = bg + s
+                if n % self.w == 0:
+                    s += "\x1b[0m\n" + bg
+                ofile.write(s)
+                last_fg = fg
+                last_bg = bg

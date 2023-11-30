@@ -20,6 +20,7 @@ import pygame
 
 from image import Image
 from ui import Palette, CharacterMap
+from tkinter import Tk, filedialog
 
 
 class Editor:
@@ -48,6 +49,9 @@ class Editor:
             if path is not None:
                 self.font = pygame.font.Font(path, 16)
                 break
+
+        # Hidden TKInter Root node for file dialogs
+        Tk().withdraw()
 
         # Icon Square sizes
         self.w_icons = 0.4 / 3 * 320
@@ -113,6 +117,23 @@ class Editor:
             if sx < x < w - .05 * 320 and sy < y < sy + self.char_map.h:
                 mapped_x, mapped_y = int((x - sx) / self.char_map.sq), int((y - sy) / self.char_map.sq)
                 self.char_map.select(mapped_x, mapped_y)
+
+            # Open Button
+            sy = .05 * 320
+            if sx < x < sx + self.w_icons and sy < y < sy + self.w_icons:
+                pass
+
+            # Save Button
+            sx = (w - 320) + .1 * 320 + self.w_icons
+            if sx < x < sx + self.w_icons and sy < y < sy + self.w_icons:
+                f = filedialog.asksaveasfilename(confirmoverwrite=True,
+                                                 filetypes=[(".ans", "ANSI File")],
+                                                 title="Save As...")
+                try:
+                    self.image.save_to_file(str(f))
+                except IOError:
+                    print(f"Could not save to file '{f}'!")
+                print(f"Saved to file '{f}'!")
 
     def redraw(self):
         w, h = self.screen.get_width(), self.screen.get_height()
