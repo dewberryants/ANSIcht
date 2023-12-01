@@ -18,9 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import sys
 import pygame
 
-from image import Image
+from image import Image, load_image_from_file
 from ui import Palette, CharacterMap
 from tkinter import Tk, filedialog
+
+from resources import icon_open, icon_save, icon_settings
 
 
 class Editor:
@@ -42,7 +44,7 @@ class Editor:
 
         # Font
         # Try some of these before giving up
-        self.font = pygame.font.SysFont(pygame.font.get_default_font(), 21)
+        self.font = pygame.font.SysFont(pygame.font.get_default_font(), 16)
         monospace_fonts = ["Hack", "Consolas", "Lucida Console", "Courier New"]
         for font in monospace_fonts:
             path = pygame.font.match_font(font)
@@ -54,7 +56,7 @@ class Editor:
         Tk().withdraw()
 
         # Icon Square sizes
-        self.w_icons = 0.4 / 3 * 320
+        self.w_icons = 48
 
         # Default image
         self.image = Image(120, 40, self.font)
@@ -89,12 +91,10 @@ class Editor:
         # Basic Background Fill
         self.screen.fill((60, 65, 70), (x, 0, width, height))
 
-        # Three squares at the top for the drawing tools:
-        # Dot, Line, Square
-        pygame.draw.rect(self.screen, (30, 35, 40),
-                         (x + w(.05), w(.05), self.w_icons, self.w_icons))
-        pygame.draw.rect(self.screen, (30, 35, 40),
-                         (x + 2 * w(.05) + self.w_icons, w(.05), self.w_icons, self.w_icons))
+        # Open, Save, Options, etc.
+        self.screen.blit(icon_open, (x + w(.05) + .2 * self.w_icons, w(.05) + .2 * self.w_icons))
+        self.screen.blit(icon_save, (x + w(.1) + (.2 + 1) * self.w_icons, w(.05) + .2 * self.w_icons))
+        self.screen.blit(icon_settings, (x + w(.15) + (.2 + 2) * self.w_icons, w(.05) + .2 * self.w_icons))
 
         # FG/BG palette and symbol table
         self.screen.blit(self.palette.surface, (x + w(0.05), w(0.1) + self.w_icons))
@@ -121,7 +121,15 @@ class Editor:
             # Open Button
             sy = .05 * 320
             if sx < x < sx + self.w_icons and sy < y < sy + self.w_icons:
-                pass
+                f = filedialog.askopenfilename(filetypes=[("ANSI File", "*.ans")],
+                                               title="Open...")
+                try:
+                    self.image = load_image_from_file(str(f), self.font)
+                    print(f"Opened file '{f}'!")
+                except IOError:
+                    print(f"Could not load from file '{f}'!")
+                except UnicodeDecodeError:
+                    print(f"Could not decode character. This should not happen :(")
 
             # Save Button
             sx = (w - 320) + .1 * 320 + self.w_icons

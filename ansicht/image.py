@@ -101,3 +101,56 @@ class Image:
                 ofile.write(s)
                 last_fg = fg
                 last_bg = bg
+
+
+def load_image_from_file(path, font) -> Image:
+    with open(path, "r", encoding="utf-8") as ifile:
+        data = dict()
+        index = 0
+        row = 0
+        char = ifile.read(1)
+        last_bg = (0, 0, 0)
+        last_fg = (0, 0, 0)
+        while char != "":
+            if char == "\n":
+                row += 1
+                char = ifile.read(1)
+                continue
+            # FG r g b, BG r g b, s
+            if index not in data:
+                bgr, bgg, bgb = last_bg
+                fgr, fgg, fgb = last_fg
+                data[index] = [fgr, fgg, fgb, bgr, bgg, bgb, ""]
+            if char == "\x1b":
+                tag = ""
+                while char != "m":
+                    tag += char
+                    char = ifile.read(1)
+                spl = list(map(int, tag[2:].split(";")))
+                if spl[0] == 38:
+                    data[index][0] = spl[2]
+                    data[index][1] = spl[3]
+                    data[index][2] = spl[4]
+                    last_fg = (spl[2], spl[3], spl[4])
+                elif spl[0] == 48:
+                    data[index][3] = spl[2]
+                    data[index][4] = spl[3]
+                    data[index][5] = spl[4]
+                    last_bg = (spl[2], spl[3], spl[4])
+            else:
+                data[index][6] = char
+                index += 1
+            char = ifile.read(1)
+        print(f"{index/row}, {row}")
+        img = Image(int(index/row), row, font)
+        for n, key in enumerate(data):
+            entry = data[key]
+            img.fg_r[n] = entry[0]
+            img.fg_g[n] = entry[1]
+            img.fg_b[n] = entry[2]
+            img.bg_r[n] = entry[3]
+            img.bg_g[n] = entry[4]
+            img.bg_b[n] = entry[5]
+            img.s[n] = entry[6]
+        img.redraw()
+        return img

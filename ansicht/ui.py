@@ -75,6 +75,11 @@ class Palette:
         n = self.cols * int(self.h / self.sq)
         a = round(n ** (1 / 3))
         remainder = n - a * a * a
+        c = 0
+        while remainder < self.cols:
+            a = round((n - c) ** (1 / 3))
+            remainder = n - a * a * a
+            c += 1
         if index < remainder:
             # Fill the rest with b/w (even if it is redundant)
             v = index / remainder * 255
