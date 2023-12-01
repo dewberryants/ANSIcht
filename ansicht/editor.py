@@ -19,7 +19,7 @@ import sys
 import pygame
 
 from image import Image, load_image_from_file
-from ui import Palette, CharacterMap
+from ui import Palette, CharacterMap, open_settings_dialog
 from tkinter import Tk, filedialog
 
 from resources import icon_open, icon_save, icon_settings
@@ -145,6 +145,13 @@ class Editor:
                     print(f"Could not save to file '{f}'!")
                 except UnicodeEncodeError:
                     print(f"Could not encode character. This should not happen :(")
+
+            # Settings Button
+            sx = (w - 320) + .15 * 320 + 2 * self.w_icons
+            if sx < x < sx + self.w_icons and sy < y < sy + self.w_icons:
+                new_w, new_h = open_settings_dialog(self.image.w, self.image.h)
+                if new_w != self.image.w or new_h != self.image.h:
+                    self.image = Image(new_w, new_h, self.font)
 
     def redraw(self):
         w, h = self.screen.get_width(), self.screen.get_height()

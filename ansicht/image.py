@@ -141,7 +141,6 @@ def load_image_from_file(path, font) -> Image:
                 data[index][6] = char
                 index += 1
             char = ifile.read(1)
-        print(f"{index/row}, {row}")
         img = Image(int(index/row), row, font)
         for n, key in enumerate(data):
             entry = data[key]

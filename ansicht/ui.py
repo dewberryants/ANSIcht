@@ -15,7 +15,10 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the Lesser GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+import tkinter
 import pygame
+
+from tkinter.simpledialog import Dialog
 
 
 class CharacterMap:
@@ -119,3 +122,34 @@ class Palette:
                     pygame.draw.rect(self.surface, (0, 0, 255),
                                      (column * self.sq, row * self.sq, self.sq, self.sq),
                                      width=1)
+
+
+class SettingsDialog(Dialog):
+    def __init__(self, w, h):
+        self.entry1, self.entry2 = None, None
+        self.w, self.h = w, h
+        super().__init__(None)
+
+    def body(self, master):
+        tkinter.Label(master, text="Canvas Width:").grid(row=0)
+        self.entry1 = tkinter.Entry(master)
+        self.entry1.insert(0, str(self.w))
+        self.entry1.grid(row=0, column=1)
+
+        tkinter.Label(master, text="Canvas Height:").grid(row=1)
+        self.entry2 = tkinter.Entry(master)
+        self.entry2.insert(0, str(self.h))
+        self.entry2.grid(row=1, column=1)
+        return self.entry1
+
+    def apply(self):
+        try:
+            self.w = int(self.entry1.get())
+            self.h = int(self.entry2.get())
+        except ValueError:
+            print("Invalid W/H")
+
+
+def open_settings_dialog(w, h):
+    d = SettingsDialog(w, h)
+    return d.w, d.h
