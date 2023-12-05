@@ -16,10 +16,10 @@ setup(
     long_description_content_type="text/markdown",
     author='Dominik Behrens',
     author_email='dewberryants@gmail.com',
-    url='https://github.com/dewberryants/asciimol',
+    url='https://github.com/dewberryants/ANSIcht',
     license=lic,
     packages=find_packages(exclude="docs"),
-    pacakges_data={"resources": ["*.bin"]},
+    package_data={"ansicht.resources": ["*.bin"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
