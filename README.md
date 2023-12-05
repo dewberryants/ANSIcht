@@ -1,6 +1,6 @@
 # ANSIcht
 
-<img alt="Screenshot" src="docs/screen.gif"/>
+<img alt="Screenshot" src="docs/screen.webp"/>
 
 (A play on the words ANSI and "Ansicht",
 the german word for "point of view" or "perspective".)
