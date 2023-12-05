@@ -36,6 +36,7 @@ class Editor:
         self.w, self.h = window_sizes[biggest]
 
         # Setup display and clock
+        pygame.display.set_icon(pygame.Surface((32, 32), flags=pygame.SRCALPHA))
         self.screen = pygame.display.set_mode((.8 * self.w, .8 * self.h), pygame.RESIZABLE)
         pygame.display.set_caption("ANSIcht")
 
@@ -152,7 +153,7 @@ class Editor:
                 f = filedialog.asksaveasfilename(confirmoverwrite=True,
                                                  filetypes=[("ANSI File", "*.ans")],
                                                  title="Save As...",
-                                                 defaultextension="ans")
+                                                 defaultextension=".ans")
                 try:
                     if type(f) is str:
                         self.image.save_to_file(f)
@@ -201,7 +202,11 @@ class Editor:
                 self.image.set_pixel(mapped_x, mapped_y,
                                      self.palette.selected_fg, self.palette.selected_bg, self.char_map.selected)
             elif pygame.mouse.get_pressed(3)[2]:
-                self.image.set_pixel(mapped_x, mapped_y, (0, 0, 0), (0, 0, 0), " ")
+                # Pick color and symbol from image
+                i = mapped_y * self.image.w + mapped_x
+                self.palette.selected_fg = (self.image.fg_r[i], self.image.fg_g[i], self.image.fg_b[i])
+                self.palette.selected_bg = (self.image.bg_r[i], self.image.bg_g[i], self.image.bg_b[i])
+                self.char_map.selected = self.image.s[i]
             # Are we moving the image around?
             elif pygame.mouse.get_pressed(3)[1]:
                 self.mx += 0.5 * dx
