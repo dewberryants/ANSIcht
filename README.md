@@ -1,6 +1,6 @@
 # ANSIcht
 
-![Screenshot](https://raw.githubusercontent.com/dewberryants/ANSIcht/master/docs/screen.png)
+![Screenshot](docs/screen.png)
 
 (A play on the words ANSI and "Ansicht",
 the german word for "point of view" or "perspective".)
