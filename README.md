@@ -1,6 +1,6 @@
 # ANSIcht
 
-![Screenshot](docs/screen.webp)
+<img alt="Screenshot" src="docs/screen.webp"/>
 
 (A play on the words ANSI and "Ansicht",
 the german word for "point of view" or "perspective".)
@@ -19,12 +19,12 @@ Currently, ANSIcht exports and reads from .txt files
 containing characters and ANSI escape sequences.
 
 # Installation
-  git clone https://github.com/dewberryants/ANSIcht.git
-  cd ANSIcht
-  pip install . --user
+    git clone https://github.com/dewberryants/ANSIcht.git
+    cd ANSIcht
+    pip install . --user
 
 # Use
-  ansicht
+    ansicht
 
 # Known Issues
  * Palette Scaling is very jumpy

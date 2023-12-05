@@ -19,11 +19,14 @@ setup(
     url='https://github.com/dewberryants/asciimol',
     license=lic,
     packages=find_packages(exclude="docs"),
-    package_data={"": ["data/*"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
         "Topic :: Art :: Pixel Art"
     ],
-    entry_points={"console_scripts": ["ansicht = ansicht:run_ansicht"]},
+    install_requires=[
+        'pygame',
+        'numpy'
+    ],
+    entry_points={"console_scripts": ["ansicht = ansicht:run_ansicht"]}
 )
