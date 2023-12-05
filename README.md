@@ -1,6 +1,6 @@
 # ANSIcht
 
-![Screenshot](docs/screen.png)
+![Screenshot](docs/screen.webp)
 
 (A play on the words ANSI and "Ansicht",
 the german word for "point of view" or "perspective".)
