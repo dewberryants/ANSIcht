@@ -10,7 +10,7 @@ packages = find_packages()
 
 setup(
     name='ANSIcht',
-    version='0.0.1',
+    version='0.0.5',
     description='A simple ANSI art editor.',
     long_description=readme,
     long_description_content_type="text/markdown",
@@ -22,7 +22,6 @@ setup(
     package_data={"": ["data/*"]},
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
         "Topic :: Art :: Pixel Art"
     ],

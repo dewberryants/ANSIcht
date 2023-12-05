@@ -84,6 +84,15 @@ class Editor:
         factor = 0.5 if neg else 1.5
         self.image.resize(factor)
 
+    def brush_preview(self):
+        srf = pygame.Surface((self.w_icons, self.w_icons))
+        txt = self.font.render(self.char_map.selected, 1, self.palette.selected_fg)
+        srf.fill(self.palette.selected_bg)
+        sx = round((self.w_icons - txt.get_width()) / 2)
+        sy = round((self.w_icons - txt.get_height()) / 2)
+        srf.blit(txt, (sx, sy))
+        return srf
+
     def draw_sidebar(self, x, width, height):
         def w(frac):
             return int(width * frac)
@@ -99,6 +108,9 @@ class Editor:
         # FG/BG palette and symbol table
         self.screen.blit(self.palette.surface, (x + w(0.05), w(0.1) + self.w_icons))
         self.screen.blit(self.char_map.surface, (x + w(0.05), w(0.15) + self.w_icons + self.palette.h))
+
+        # Drawing Preview
+        self.screen.blit(self.brush_preview(), (x + w(.2) + 4 * self.w_icons, w(.05)))
 
     def mouse(self, event):
         if event.button == 1 or event.button == 3:
@@ -124,8 +136,11 @@ class Editor:
                 f = filedialog.askopenfilename(filetypes=[("ANSI File", "*.ans")],
                                                title="Open...")
                 try:
-                    self.image = load_image_from_file(str(f), self.font)
-                    print(f"Opened file '{f}'!")
+                    if type(f) is str:
+                        self.image = load_image_from_file(str(f), self.font)
+                        print(f"Opened file '{f}'!")
+                    else:
+                        raise IOError
                 except IOError:
                     print(f"Could not load from file '{f}'!")
                 except UnicodeDecodeError:
@@ -139,8 +154,11 @@ class Editor:
                                                  title="Save As...",
                                                  defaultextension="ans")
                 try:
-                    self.image.save_to_file(str(f))
-                    print(f"Saved to file '{f}'!")
+                    if type(f) is str:
+                        self.image.save_to_file(f)
+                        print(f"Saved to file '{f}'!")
+                    else:
+                        raise IOError()
                 except IOError:
                     print(f"Could not save to file '{f}'!")
                 except UnicodeEncodeError:
@@ -172,7 +190,7 @@ class Editor:
         # Selection
         x, y = pygame.mouse.get_pos()
         dx, dy = pygame.mouse.get_rel()
-        if sx < x < sx + self.image.w * psx and sy < y < sy + self.image.h * psy:
+        if sx < x < sx + self.image.w * psx and sy < y < sy + self.image.h * psy and x < w - 320:
             self.cursor = mapped_x, mapped_y = int((x - sx) / psx), int((y - sy) / psy)
             pygame.draw.rect(self.screen, (200, 200, 200), (sx + mapped_x * psx, sy + mapped_y * psy, psx, psy),
                              width=1)

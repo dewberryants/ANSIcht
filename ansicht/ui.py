@@ -148,6 +148,11 @@ class SettingsDialog(Dialog):
             self.h = int(self.entry2.get())
         except ValueError:
             print("Invalid W/H")
+        super().apply()
+
+    def cancel(self, event: None = ...):
+        self.withdraw()
+        self.destroy()
 
 
 def open_settings_dialog(w, h):
