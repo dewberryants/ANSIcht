@@ -19,12 +19,12 @@ Currently, ANSIcht exports and reads from .txt files
 containing characters and ANSI escape sequences.
 
 # Installation
-  git clone https://github.com/dewberryants/ANSIcht.git
-  cd ANSIcht
-  pip install . --user
+    git clone https://github.com/dewberryants/ANSIcht.git
+    cd ANSIcht
+    pip install . --user
 
 # Use
-  ansicht
+    ansicht
 
 # Known Issues
  * Palette Scaling is very jumpy
