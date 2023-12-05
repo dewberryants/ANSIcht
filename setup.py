@@ -19,6 +19,7 @@ setup(
     url='https://github.com/dewberryants/asciimol',
     license=lic,
     packages=find_packages(exclude="docs"),
+    pacakges_data={"resources": ["*.bin"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
