@@ -18,11 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import sys
 import pygame
 
-from image import Image, load_image_from_file
-from ui import Palette, CharacterMap, open_settings_dialog
+from ansicht.image import Image, load_image_from_file
+from ansicht.ui import Palette, CharacterMap, open_settings_dialog
 from tkinter import Tk, filedialog
 
-from resources import icon_open, icon_save, icon_settings
+from ansicht.resources import icon_open, icon_save, icon_settings
 
 
 class Editor:

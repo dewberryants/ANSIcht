@@ -24,6 +24,9 @@ setup(
         "Operating System :: OS Independent",
         "Topic :: Art :: Pixel Art"
     ],
-    install_requires=["numpy", "pygame"],
+    install_requires=[
+        'pygame',
+        'numpy'
+    ],
     entry_points={"console_scripts": ["ansicht = ansicht:run_ansicht"]}
 )
