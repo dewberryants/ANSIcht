@@ -10,7 +10,7 @@ packages = find_packages()
 
 setup(
     name='ANSIcht',
-    version='0.0.5',
+    version='0.0.6',
     description='A simple ANSI art editor.',
     long_description=readme,
     long_description_content_type="text/markdown",

@@ -29,7 +29,6 @@ containing characters and ANSI escape sequences.
 # Known Issues
  * Palette Scaling is very jumpy
  * No scrolling on palette / character map
- * Zooming cant restore original pixel size
  * No custom palette
  * Dark Mode Only
 

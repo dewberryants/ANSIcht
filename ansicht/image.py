@@ -82,6 +82,8 @@ class Image:
     def resize(self, factor):
         # Smallest zoom distance is 1x2, so we don't lose the actual pixel ratio
         self.px = round(self.px * factor) if round(self.px * factor) >= 1 else 1
+        if self.px * 0.8 < self.font.size(" ")[0] < self.px * 1.2:
+            self.px = self.font.size(" ")[0]
         self.redraw()
 
     def save_to_file(self, path):
