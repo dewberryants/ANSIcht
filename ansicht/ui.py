@@ -26,8 +26,8 @@ class CharacterMap:
         self.w, self.h = w, h
         self.surface = None
         self.font = font
-        self.cols = 12
-        self.sq = int(w / self.cols)
+        self.cols = int(w / font.size(" ")[1])
+        self.sq = round(w / self.cols)
         # Ugly hardcoded characters right now, load these externally later
         self.chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
         self.chars += "1234567890!§$%&/()=?`´+#-.,;:_'*²³{[]}\\~@<>|^°"
@@ -48,7 +48,7 @@ class CharacterMap:
             if int(x) / self.sq == self.cols:
                 x = 0
                 y += self.sq
-            self.surface.blit(srf, (x + .25 * self.sq, y + .25 * self.sq))
+            self.surface.blit(srf, (x + .25 * self.sq, y))
             if (x / self.sq, y / self.sq) == self.marker:
                 pygame.draw.rect(self.surface, (0, 255, 0), (x, y, self.sq, self.sq), width=1)
             x += self.sq

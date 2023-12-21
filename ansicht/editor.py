@@ -15,6 +15,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the Lesser GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+import os.path
 import sys
 import pygame
 
@@ -45,13 +46,15 @@ class Editor:
 
         # Font
         # Try some of these before giving up
-        self.font = pygame.font.SysFont(pygame.font.get_default_font(), 16)
+        self.font_size = 16
+        self.font_name = pygame.font.get_default_font()
         monospace_fonts = ["Hack", "Consolas", "Lucida Console", "Courier New"]
         for font in monospace_fonts:
             path = pygame.font.match_font(font)
-            if path is not None:
-                self.font = pygame.font.Font(path, 16)
-                break
+            if os.path.exists(path):
+                self.font_name = path
+            break
+        self.font = pygame.font.Font(self.font_name, self.font_size)
 
         # Hidden TKInter Root node for file dialogs
         Tk().withdraw()

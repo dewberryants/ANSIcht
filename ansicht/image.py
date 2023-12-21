@@ -99,7 +99,7 @@ class Image:
                 if bg != last_bg:
                     s = bg + s
                 if n % self.w == 0:
-                    s += "\x1b[0m\n" + bg
+                    s += "\x1b[0m\n" + bg + fg
                 ofile.write(s)
                 last_fg = fg
                 last_bg = bg
