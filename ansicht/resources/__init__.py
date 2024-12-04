@@ -29,6 +29,5 @@ icon_settings = pygame.image.frombytes(
 icon_save = pygame.image.frombytes(
     files('ansicht.resources').joinpath('save.bin').read_bytes(), (32, 32), 'RGBA'
 )
-def_palette = np.loadtxt(files('ansicht.resources').joinpath('default.palette').open(mode="r"), dtype='u4')
 
-__all__ = [icon_open, icon_settings, icon_save, def_palette]
+__all__ = [icon_open, icon_settings, icon_save]

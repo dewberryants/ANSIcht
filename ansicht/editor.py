@@ -20,7 +20,7 @@ import sys
 import pygame
 
 from ansicht.image import Image, load_image_from_file
-from ansicht.ui import CharacterMap, open_settings_dialog
+from ansicht.ui import CharacterMap, open_settings_dialog, HistoryPalette
 from tkinter import Tk, filedialog, colorchooser
 
 from ansicht.resources import icon_open, icon_save, icon_settings
@@ -56,11 +56,14 @@ class Editor:
             break
         self.font = pygame.font.Font(self.font_name, self.font_size)
 
-        # Hidden TKInter Root node for file dialogs
+        # Hidden TKInter Root node for file and color dialogs
         Tk().withdraw()
 
         # Icon Square sizes
         self.w_icons = 48
+
+        # Palette remembers last 12 used colors
+        self.palette = HistoryPalette(320 * 0.9, 2 * self.w_icons)
 
         # Default image
         self.image = Image(120, 40, self.font)
@@ -107,19 +110,26 @@ class Editor:
         self.screen.blit(icon_save, (x + w(.1) + self.w_icons + 8, w(.05) + 8))
         self.screen.blit(icon_settings, (x + w(.15) + 2 * self.w_icons + 8, w(.05) + 8))
 
-        # FG/BG Selectors, Brush Preview and Palette History
+        # FG/BG Selectors, Brush Preview
         self.screen.fill(self.draw_fg_color, (x + w(.05), w(.1) + self.w_icons,
                                               self.w_icons, self.w_icons))
         self.screen.fill(self.draw_bg_color, (x + w(.1) + self.w_icons, w(.1) + self.w_icons,
                                               self.w_icons, self.w_icons))
         self.screen.blit(self.brush_preview(), (x + w(.2) + 4 * self.w_icons, w(.1) + self.w_icons))
 
-        self.screen.fill((30, 35, 40), (x + w(.05), w(.15) + 2 * self.w_icons,
-                                        320 * 0.9, 2 * self.w_icons))
-        # self.screen.blit(self.palette.surface, (x + w(0.05), w(0.1) + self.w_icons))
+        # History Palette
+        self.screen.blit(self.palette.surface, (x + w(0.05), w(0.15) + 2 * self.w_icons))
 
         # Symbol table
         self.screen.blit(self.char_map.surface, (x + w(.05), w(0.2) + 4 * self.w_icons))
+
+    def change_color(self, color: tuple, bg=False):
+        if bg:
+            self.draw_bg_color = color
+        else:
+            self.draw_fg_color = color
+        # Remember the picked color
+        self.palette.remember(color)
 
     def mouse(self, event):
         if event.button == 1 or event.button == 3:
@@ -130,24 +140,30 @@ class Editor:
             # FG
             sy = .1 * 320 + self.w_icons
             if sx < x < sx + self.w_icons and sy < y < sy + self.w_icons:
-                f = filedialog.askopenfilename(filetypes=[("ANSI File", "*.ans")],
-                                               title="Open...")
-                try:
-                    if type(f) is str:
-                        self.image = load_image_from_file(str(f), self.font)
-                        print(f"Opened file '{f}'!")
-                    else:
-                        raise IOError
-                except IOError:
-                    print(f"Could not load from file '{f}'!")
-                except UnicodeDecodeError:
-                    print(f"Could not decode character. This should not happen :(")
-            # if sx < x < w - .05 * 320 and sy < y < sy + self.palette.h:
-            #     mapped_x, mapped_y = int((x - sx) / self.palette.sq), int((y - sy) / self.palette.sq)
-            #     self.palette.select(mapped_x, mapped_y, event.button == 3)
+                init = f"#{self.draw_fg_color[0]:02X}{self.draw_fg_color[1]:02X}{self.draw_fg_color[2]:02X}"
+                tup, hex_str = colorchooser.askcolor(initialcolor=init)
+                if tup is not None:
+                    self.change_color(tuple(map(int, tup)), False)
+
+            # BG
+            sx = (w - 320) + .1 * 320 + self.w_icons
+            if sx < x < sx + self.w_icons and sy < y < sy + self.w_icons:
+                init = f"#{self.draw_bg_color[0]:02X}{self.draw_bg_color[1]:02X}{self.draw_bg_color[2]:02X}"
+                tup, hex_str = colorchooser.askcolor(initialcolor=init)
+                if tup is not None:
+                    self.change_color(tuple(map(int, tup)), True)
+
+            # History Palette
+            sy = .15 * 320 + 2 * self.w_icons
+            sx = (w - 320) + .05 * 320
+            if sx < x < w - .05 * 320 and sy < y < sy + self.palette.h:
+                mapped_x, mapped_y = int((x - sx) / self.palette.sq), int((y - sy) / self.palette.sq)
+                color = self.palette.select(mapped_x, mapped_y)
+                if color is not None:
+                    self.change_color(color, event.button == 3)
 
             # Character Map
-            sy = .2 * 320 + 4 * self.w_icons
+            sy = .2 * 320 + 2 * self.w_icons + self.palette.h
             if sx < x < w - .05 * 320 and sy < y < sy + self.char_map.h:
                 mapped_x, mapped_y = int((x - sx) / self.char_map.sq), int((y - sy) / self.char_map.sq)
                 self.char_map.select(mapped_x, mapped_y)
@@ -225,8 +241,8 @@ class Editor:
             elif pygame.mouse.get_pressed(3)[2]:
                 # Pick color and symbol from image
                 i = mapped_y * self.image.w + mapped_x
-                self.draw_fg_color = (self.image.fg_r[i], self.image.fg_g[i], self.image.fg_b[i])
-                self.draw_bg_color = (self.image.bg_r[i], self.image.bg_g[i], self.image.bg_b[i])
+                self.change_color((self.image.fg_r[i], self.image.fg_g[i], self.image.fg_b[i]), False)
+                self.change_color((self.image.bg_r[i], self.image.bg_g[i], self.image.bg_b[i]), True)
                 self.char_map.selected = self.image.s[i]
             # Are we moving the image around?
             elif pygame.mouse.get_pressed(3)[1]:

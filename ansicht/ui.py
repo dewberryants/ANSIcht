@@ -17,11 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import tkinter
 import pygame
-import numpy as np
 
 from tkinter.simpledialog import Dialog
-
-from ansicht.resources import def_palette
 
 
 class CharacterMap:
@@ -65,54 +62,39 @@ class CharacterMap:
             pass
 
 
-class Palette:
+class HistoryPalette:
     def __init__(self, w, h):
-        self.marker_bg = (0, 0)
-        self.marker_fg = (0, 0)
-        self.selected_bg = (0, 0, 0)
-        self.selected_fg = (0, 0, 0)
         self.w = w
         self.h = h
-        self.palette = def_palette
-        self.cols = -1
-        self.sq = -1
+        self.history = list()
         self.surface = None
+        self.sq = int(self.w / 6)
         self.redraw()
 
-    def select(self, x, y, fg=False):
-        if self.cols * y + x > self.palette.shape[0] - 1:
-            return
-        r, g, b = self.palette[self.cols * y + x]
-        if fg:
-            self.selected_fg = (r, g, b)
-            self.marker_fg = (x, y)
-        else:
-            self.selected_bg = (r, g, b)
-            self.marker_bg = (x, y)
-        self.redraw()
+    def select(self, x, y):
+        try:
+            return self.history[6 * y + x]
+        except IndexError:
+            return None
 
     def redraw(self):
-        self.sq = np.sqrt(self.w * self.h / self.palette.shape[0])
-        self.cols = round(self.w / self.sq)
-        rows = int(self.palette.shape[0] / self.cols)
-        if self.palette.shape[0] - rows * self.cols > 0:
-            rows += 1
-        self.surface = pygame.Surface((self.cols * self.sq, self.h))
+        self.surface = pygame.Surface((6 * self.sq, self.h))
         self.surface.fill((30, 35, 40))
-        for row in range(rows):
-            for column in range(self.cols):
-                if row * self.cols + column > self.palette.shape[0] - 1:
-                    continue
-                r, g, b = self.palette[row * self.cols + column]
-                pygame.draw.rect(self.surface, (r, g, b), (column * self.sq, row * self.sq, self.sq, self.sq))
-                if (column, row) == self.marker_bg:
-                    pygame.draw.rect(self.surface, (0, 255, 0),
-                                     (column * self.sq, row * self.sq, self.sq, self.sq),
-                                     width=1)
-                elif (column, row) == self.marker_fg:
-                    pygame.draw.rect(self.surface, (0, 0, 255),
-                                     (column * self.sq, row * self.sq, self.sq, self.sq),
-                                     width=1)
+        row, col = 0, 0
+        for color in self.history:
+            if col == 6:
+                col = 0
+                row += 1
+            r, g, b = color
+            pygame.draw.rect(self.surface, (r, g, b), (col * self.sq, row * self.sq, self.sq, self.sq))
+            col += 1
+
+    def remember(self, color):
+        if color not in self.history:
+            self.history.insert(0, color)
+            if len(self.history) >= 12:
+                self.history = self.history[:12]
+            self.redraw()
 
 
 class SettingsDialog(Dialog):
