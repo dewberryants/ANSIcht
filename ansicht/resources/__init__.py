@@ -16,6 +16,7 @@ You should have received a copy of the Lesser GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import pygame
+import numpy as np
 
 from importlib.resources import files
 
@@ -28,5 +29,6 @@ icon_settings = pygame.image.frombytes(
 icon_save = pygame.image.frombytes(
     files('ansicht.resources').joinpath('save.bin').read_bytes(), (32, 32), 'RGBA'
 )
+def_palette = np.loadtxt(files('ansicht.resources').joinpath('default.palette').open(mode="r"), dtype='u4')
 
-__all__ = [icon_open, icon_settings, icon_save]
+__all__ = [icon_open, icon_settings, icon_save, def_palette]

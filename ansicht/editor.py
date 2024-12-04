@@ -20,8 +20,8 @@ import sys
 import pygame
 
 from ansicht.image import Image, load_image_from_file
-from ansicht.ui import Palette, CharacterMap, open_settings_dialog
-from tkinter import Tk, filedialog
+from ansicht.ui import CharacterMap, open_settings_dialog
+from tkinter import Tk, filedialog, colorchooser
 
 from ansicht.resources import icon_open, icon_save, icon_settings
 
@@ -68,7 +68,8 @@ class Editor:
         self.mx, self.my = (self.screen.get_width() - 320) / 2, (self.screen.get_height() - 32) / 2
 
         # Default Palette
-        self.palette = Palette(320 * 0.9, (self.screen.get_height() - 32) / 2 - .1 * 320)
+        self.draw_fg_color = 255, 255, 255
+        self.draw_bg_color = 0, 0, 0
 
         # Default Character Map
         self.char_map = CharacterMap(320 * .9,
@@ -76,9 +77,6 @@ class Editor:
 
     def resize(self):
         w, h = 320 * 0.9, (self.screen.get_height() - 32) / 2 - .1 * 320 - self.w_icons
-        self.palette.sq = int(w / self.palette.cols)
-        self.palette.h = h
-        self.palette.redraw()
         self.char_map.w, self.char_map.h = w, h
         self.char_map.redraw()
         pass
@@ -90,8 +88,8 @@ class Editor:
 
     def brush_preview(self):
         srf = pygame.Surface((self.w_icons, self.w_icons))
-        txt = self.font.render(self.char_map.selected, 1, self.palette.selected_fg)
-        srf.fill(self.palette.selected_bg)
+        txt = self.font.render(self.char_map.selected, 1, self.draw_fg_color)
+        srf.fill(self.draw_bg_color)
         sx = round((self.w_icons - txt.get_width()) / 2)
         sy = round((self.w_icons - txt.get_height()) / 2)
         srf.blit(txt, (sx, sy))
@@ -105,31 +103,51 @@ class Editor:
         self.screen.fill((60, 65, 70), (x, 0, width, height))
 
         # Open, Save, Options, etc.
-        self.screen.blit(icon_open, (x + w(.05) + .2 * self.w_icons, w(.05) + .2 * self.w_icons))
-        self.screen.blit(icon_save, (x + w(.1) + (.2 + 1) * self.w_icons, w(.05) + .2 * self.w_icons))
-        self.screen.blit(icon_settings, (x + w(.15) + (.2 + 2) * self.w_icons, w(.05) + .2 * self.w_icons))
+        self.screen.blit(icon_open, (x + w(.05) + 8, w(.05) + 8))
+        self.screen.blit(icon_save, (x + w(.1) + self.w_icons + 8, w(.05) + 8))
+        self.screen.blit(icon_settings, (x + w(.15) + 2 * self.w_icons + 8, w(.05) + 8))
 
-        # FG/BG palette and symbol table
-        self.screen.blit(self.palette.surface, (x + w(0.05), w(0.1) + self.w_icons))
-        self.screen.blit(self.char_map.surface, (x + w(0.05), w(0.15) + self.w_icons + self.palette.h))
+        # FG/BG Selectors, Brush Preview and Palette History
+        self.screen.fill(self.draw_fg_color, (x + w(.05), w(.1) + self.w_icons,
+                                              self.w_icons, self.w_icons))
+        self.screen.fill(self.draw_bg_color, (x + w(.1) + self.w_icons, w(.1) + self.w_icons,
+                                              self.w_icons, self.w_icons))
+        self.screen.blit(self.brush_preview(), (x + w(.2) + 4 * self.w_icons, w(.1) + self.w_icons))
 
-        # Drawing Preview
-        self.screen.blit(self.brush_preview(), (x + w(.2) + 4 * self.w_icons, w(.05)))
+        self.screen.fill((30, 35, 40), (x + w(.05), w(.15) + 2 * self.w_icons,
+                                        320 * 0.9, 2 * self.w_icons))
+        # self.screen.blit(self.palette.surface, (x + w(0.05), w(0.1) + self.w_icons))
+
+        # Symbol table
+        self.screen.blit(self.char_map.surface, (x + w(.05), w(0.2) + 4 * self.w_icons))
 
     def mouse(self, event):
         if event.button == 1 or event.button == 3:
             w, h = self.screen.get_width(), self.screen.get_height()
             x, y = event.pos
-
-            # Palette
             sx = (w - 320) + .05 * 320
+
+            # FG
             sy = .1 * 320 + self.w_icons
-            if sx < x < w - .05 * 320 and sy < y < sy + self.palette.h:
-                mapped_x, mapped_y = int((x - sx) / self.palette.sq), int((y - sy) / self.palette.sq)
-                self.palette.select(mapped_x, mapped_y, event.button == 3)
+            if sx < x < sx + self.w_icons and sy < y < sy + self.w_icons:
+                f = filedialog.askopenfilename(filetypes=[("ANSI File", "*.ans")],
+                                               title="Open...")
+                try:
+                    if type(f) is str:
+                        self.image = load_image_from_file(str(f), self.font)
+                        print(f"Opened file '{f}'!")
+                    else:
+                        raise IOError
+                except IOError:
+                    print(f"Could not load from file '{f}'!")
+                except UnicodeDecodeError:
+                    print(f"Could not decode character. This should not happen :(")
+            # if sx < x < w - .05 * 320 and sy < y < sy + self.palette.h:
+            #     mapped_x, mapped_y = int((x - sx) / self.palette.sq), int((y - sy) / self.palette.sq)
+            #     self.palette.select(mapped_x, mapped_y, event.button == 3)
 
             # Character Map
-            sy = .15 * 320 + self.w_icons + self.palette.h
+            sy = .2 * 320 + 4 * self.w_icons
             if sx < x < w - .05 * 320 and sy < y < sy + self.char_map.h:
                 mapped_x, mapped_y = int((x - sx) / self.char_map.sq), int((y - sy) / self.char_map.sq)
                 self.char_map.select(mapped_x, mapped_y)
@@ -203,12 +221,12 @@ class Editor:
             # Are we drawing?
             if pygame.mouse.get_pressed(3)[0]:
                 self.image.set_pixel(mapped_x, mapped_y,
-                                     self.palette.selected_fg, self.palette.selected_bg, self.char_map.selected)
+                                     self.draw_fg_color, self.draw_bg_color, self.char_map.selected)
             elif pygame.mouse.get_pressed(3)[2]:
                 # Pick color and symbol from image
                 i = mapped_y * self.image.w + mapped_x
-                self.palette.selected_fg = (self.image.fg_r[i], self.image.fg_g[i], self.image.fg_b[i])
-                self.palette.selected_bg = (self.image.bg_r[i], self.image.bg_g[i], self.image.bg_b[i])
+                self.draw_fg_color = (self.image.fg_r[i], self.image.fg_g[i], self.image.fg_b[i])
+                self.draw_bg_color = (self.image.bg_r[i], self.image.bg_g[i], self.image.bg_b[i])
                 self.char_map.selected = self.image.s[i]
             # Are we moving the image around?
             elif pygame.mouse.get_pressed(3)[1]:

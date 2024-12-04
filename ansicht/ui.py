@@ -17,8 +17,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import tkinter
 import pygame
+import numpy as np
 
 from tkinter.simpledialog import Dialog
+
+from ansicht.resources import def_palette
 
 
 class CharacterMap:
@@ -68,36 +71,18 @@ class Palette:
         self.marker_fg = (0, 0)
         self.selected_bg = (0, 0, 0)
         self.selected_fg = (0, 0, 0)
-        self.cols = 12
-        self.sq = int(w / self.cols)
+        self.w = w
         self.h = h
+        self.palette = def_palette
+        self.cols = -1
+        self.sq = -1
         self.surface = None
         self.redraw()
 
-    def value(self, index):
-        n = self.cols * int(self.h / self.sq)
-        a = round(n ** (1 / 3))
-        remainder = n - a * a * a
-        c = 0
-        while remainder < self.cols:
-            a = round((n - c) ** (1 / 3))
-            remainder = n - a * a * a
-            c += 1
-        if index < remainder:
-            # Fill the rest with b/w (even if it is redundant)
-            v = index / remainder * 255
-            return v, v, v
-        elif remainder <= index < remainder + a * a * a:
-            index -= remainder
-            g = index % a
-            b = (index // a) % a
-            r = (index // a) // a % a
-            return r / a * 255, g / a * 255, b / a * 255
-        # Something went wrong
-        return 0, 0, 0
-
     def select(self, x, y, fg=False):
-        r, g, b = self.value(self.cols * y + x)
+        if self.cols * y + x > self.palette.shape[0] - 1:
+            return
+        r, g, b = self.palette[self.cols * y + x]
         if fg:
             self.selected_fg = (r, g, b)
             self.marker_fg = (x, y)
@@ -107,12 +92,18 @@ class Palette:
         self.redraw()
 
     def redraw(self):
-        rows = round(self.h / self.sq)
+        self.sq = np.sqrt(self.w * self.h / self.palette.shape[0])
+        self.cols = round(self.w / self.sq)
+        rows = int(self.palette.shape[0] / self.cols)
+        if self.palette.shape[0] - rows * self.cols > 0:
+            rows += 1
         self.surface = pygame.Surface((self.cols * self.sq, self.h))
         self.surface.fill((30, 35, 40))
         for row in range(rows):
             for column in range(self.cols):
-                r, g, b = self.value(row * self.cols + column)
+                if row * self.cols + column > self.palette.shape[0] - 1:
+                    continue
+                r, g, b = self.palette[row * self.cols + column]
                 pygame.draw.rect(self.surface, (r, g, b), (column * self.sq, row * self.sq, self.sq, self.sq))
                 if (column, row) == self.marker_bg:
                     pygame.draw.rect(self.surface, (0, 255, 0),
