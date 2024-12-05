@@ -1,6 +1,6 @@
 """
-ANSIcht -  A simple ANSI art editor.
-Copyright (C) 2023 Dominik Behrens
+ansi.e -  A simple ANSI art editor.
+Copyright (C) 2024 Dominik Behrens
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,11 +19,11 @@ import os.path
 import sys
 import pygame
 
-from ansicht.image import Image, load_image_from_file
-from ansicht.ui import CharacterMap, open_settings_dialog, HistoryPalette
+from ansidote.image import Image, load_image_from_file
+from ansidote.ui import CharacterMap, open_settings_dialog, HistoryPalette
 from tkinter import Tk, filedialog, colorchooser
 
-from ansicht.resources import icon_open, icon_save, icon_settings
+from ansidote.resources import icon_open, icon_save, icon_settings
 
 
 class Editor:

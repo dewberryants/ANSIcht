@@ -9,17 +9,17 @@ with open('./LICENSE') as f:
 packages = find_packages()
 
 setup(
-    name='ANSIcht',
-    version='0.0.6',
+    name='ansidote',
+    version='0.0.8',
     description='A simple ANSI art editor.',
     long_description=readme,
     long_description_content_type="text/markdown",
     author='Dominik Behrens',
     author_email='dewberryants@gmail.com',
-    url='https://github.com/dewberryants/ANSIcht',
+    url='https://github.com/dewberryants/ansidote',
     license=lic,
     packages=find_packages(exclude="docs"),
-    package_data={"ansicht.resources": ["*.bin"]},
+    package_data={"ansidote.resources": ["*.bin"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
@@ -29,5 +29,5 @@ setup(
         'pygame',
         'numpy'
     ],
-    entry_points={"console_scripts": ["ansicht = ansicht:run_ansicht"]}
+    entry_points={"console_scripts": ["ansidote = ansidote:run_ansicht"]}
 )
