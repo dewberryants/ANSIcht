@@ -20,13 +20,13 @@ import pygame
 from importlib.resources import files
 
 icon_open = pygame.image.frombytes(
-    files('ansicht.resources').joinpath('open.bin').read_bytes(), (32, 32), 'RGBA'
+    files('ansidote.resources').joinpath('open.bin').read_bytes(), (32, 32), 'RGBA'
 )
 icon_settings = pygame.image.frombytes(
-    files('ansicht.resources').joinpath('settings.bin').read_bytes(), (32, 32), 'RGBA'
+    files('ansidote.resources').joinpath('settings.bin').read_bytes(), (32, 32), 'RGBA'
 )
 icon_save = pygame.image.frombytes(
-    files('ansicht.resources').joinpath('save.bin').read_bytes(), (32, 32), 'RGBA'
+    files('ansidote.resources').joinpath('save.bin').read_bytes(), (32, 32), 'RGBA'
 )
 
 __all__ = [icon_open, icon_settings, icon_save]
