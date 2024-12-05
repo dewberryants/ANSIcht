@@ -22,8 +22,8 @@ from tkinter.simpledialog import Dialog
 
 
 class CharacterMap:
-    def __init__(self, w, h, font: pygame.font.Font):
-        self.w, self.h = w, h
+    def __init__(self, w, font: pygame.font.Font):
+        self.w = w
         self.surface = None
         self.font = font
         self.cols = int(w / font.size(" ")[1])
@@ -34,6 +34,9 @@ class CharacterMap:
         self.chars += "─━│┃┄┅┆┇┈┉┊┋┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳┴┵" \
                       "┶┷┸┹┺┻┼┽┾┿╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬" \
                       "╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿▀▁▂▃▄▅▆▇█▉▊▋▌▍▎▐░▒▓▔▕▖▗▘▙▚▛▜▝▞▟"
+        self.h = int(len(self.chars) / self.cols) * self.sq
+        if len(self.chars) % self.cols > 0:
+            self.h += self.sq
         self.marker = (0, 0)
         self.selected = " "
         self.redraw()

@@ -75,14 +75,7 @@ class Editor:
         self.draw_bg_color = 0, 0, 0
 
         # Default Character Map
-        self.char_map = CharacterMap(320 * .9,
-                                     (self.screen.get_height() - 32) / 2 - .1 * 320 - self.w_icons, self.font)
-
-    def resize(self):
-        w, h = 320 * 0.9, (self.screen.get_height() - 32) / 2 - .1 * 320 - self.w_icons
-        self.char_map.w, self.char_map.h = w, h
-        self.char_map.redraw()
-        pass
+        self.char_map = CharacterMap(320 * .9, self.font)
 
     def zoom(self, event):
         neg = event.precise_y < 0
@@ -90,12 +83,10 @@ class Editor:
         self.image.resize(factor)
 
     def brush_preview(self):
-        srf = pygame.Surface((self.w_icons, self.w_icons))
         txt = self.font.render(self.char_map.selected, 1, self.draw_fg_color)
+        srf = pygame.Surface((16 + txt.get_width(), 16 + txt.get_height()))
         srf.fill(self.draw_bg_color)
-        sx = round((self.w_icons - txt.get_width()) / 2)
-        sy = round((self.w_icons - txt.get_height()) / 2)
-        srf.blit(txt, (sx, sy))
+        srf.blit(txt, (8, 8))
         return srf
 
     def draw_sidebar(self, x, width, height):
@@ -115,7 +106,11 @@ class Editor:
                                               self.w_icons, self.w_icons))
         self.screen.fill(self.draw_bg_color, (x + w(.1) + self.w_icons, w(.1) + self.w_icons,
                                               self.w_icons, self.w_icons))
-        self.screen.blit(self.brush_preview(), (x + w(.2) + 4 * self.w_icons, w(.1) + self.w_icons))
+        preview = self.brush_preview()
+        pygame.draw.rect(self.screen, (180, 180, 180), (x + w(.2) + 4 * self.w_icons - 1, w(.1) + self.w_icons - 1,
+                                                        self.w_icons + 2, self.w_icons + 2), width=1)
+        self.screen.blit(preview, (x + w(.2) + 4 * self.w_icons + abs(self.w_icons - preview.get_width()) / 2,
+                                   w(.1) + self.w_icons + abs(self.w_icons - preview.get_height()) / 2))
 
         # History Palette
         self.screen.blit(self.palette.surface, (x + w(0.05), w(0.15) + 2 * self.w_icons))
@@ -254,15 +249,17 @@ class Editor:
 
     def run(self):
         while True:
+            resizing = False
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.WINDOWRESIZED:
-                    self.resize()
+                    resizing = True
                 elif event.type == pygame.MOUSEWHEEL:
                     self.zoom(event)
                 elif event.type == pygame.MOUSEBUTTONUP:
                     self.mouse(event)
-            self.redraw()
+            if not resizing:
+                self.redraw()
             self.clock.tick(60)

@@ -16,7 +16,6 @@ You should have received a copy of the Lesser GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import pygame
-import numpy as np
 
 from importlib.resources import files
 
