@@ -1,6 +1,6 @@
 """
-ANSIcht -  A simple ANSI art editor.
-Copyright (C) 2023 Dominik Behrens
+ansidote -  A simple ANSI art editor.
+Copyright (C) 2024 Dominik Behrens
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

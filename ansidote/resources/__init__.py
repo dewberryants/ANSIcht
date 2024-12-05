@@ -1,6 +1,6 @@
 """
-ANSIcht -  A simple ANSI art editor.
-Copyright (C) 2023 Dominik Behrens
+ansidote -  A simple ANSI art editor.
+Copyright (C) 2024 Dominik Behrens
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,8 +15,18 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the Lesser GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-from ansicht.editor import Editor
+import pygame
 
+from importlib.resources import files
 
-def run_ansicht():
-    Editor().run()
+icon_open = pygame.image.frombytes(
+    files('ansicht.resources').joinpath('open.bin').read_bytes(), (32, 32), 'RGBA'
+)
+icon_settings = pygame.image.frombytes(
+    files('ansicht.resources').joinpath('settings.bin').read_bytes(), (32, 32), 'RGBA'
+)
+icon_save = pygame.image.frombytes(
+    files('ansicht.resources').joinpath('save.bin').read_bytes(), (32, 32), 'RGBA'
+)
+
+__all__ = [icon_open, icon_settings, icon_save]
