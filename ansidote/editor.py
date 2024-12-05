@@ -48,12 +48,12 @@ class Editor:
         # Try some of these before giving up
         self.font_size = 16
         self.font_name = pygame.font.get_default_font()
-        monospace_fonts = ["Hack", "Source Code Pro", "Monospace", "Consolas", "Lucida Console", "Courier New"]
+        monospace_fonts = ["Hack", "Source Code Pro", "Consolas", "Lucida Console", "Courier New", "Monospace"]
         for font in monospace_fonts:
             path = pygame.font.match_font(font)
-            if os.path.exists(path):
+            if path is not None and os.path.exists(path):
                 self.font_name = path
-            break
+                break
         self.font = pygame.font.Font(self.font_name, self.font_size)
 
         # Hidden TKInter Root node for file and color dialogs
