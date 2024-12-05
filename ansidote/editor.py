@@ -39,7 +39,7 @@ class Editor:
         # Setup display and clock
         pygame.display.set_icon(pygame.Surface((32, 32), flags=pygame.SRCALPHA))
         self.screen = pygame.display.set_mode((.8 * self.w, .8 * self.h), pygame.RESIZABLE)
-        pygame.display.set_caption("ANSIcht")
+        pygame.display.set_caption("ansi.e")
 
         # Clock
         self.clock = pygame.time.Clock()
@@ -48,7 +48,7 @@ class Editor:
         # Try some of these before giving up
         self.font_size = 16
         self.font_name = pygame.font.get_default_font()
-        monospace_fonts = ["Hack", "Consolas", "Lucida Console", "Courier New"]
+        monospace_fonts = ["Hack", "Source Code Pro", "Monospace", "Consolas", "Lucida Console", "Courier New"]
         for font in monospace_fonts:
             path = pygame.font.match_font(font)
             if os.path.exists(path):
@@ -57,7 +57,8 @@ class Editor:
         self.font = pygame.font.Font(self.font_name, self.font_size)
 
         # Hidden TKInter Root node for file and color dialogs
-        Tk().withdraw()
+        self.tk_root = Tk()
+        self.tk_root.withdraw()
 
         # Icon Square sizes
         self.w_icons = 48
@@ -70,7 +71,6 @@ class Editor:
         self.cursor = None
         self.mx, self.my = (self.screen.get_width() - 320) / 2, (self.screen.get_height() - 32) / 2
 
-        # Default Palette
         self.draw_fg_color = 255, 255, 255
         self.draw_bg_color = 0, 0, 0
 
@@ -97,26 +97,30 @@ class Editor:
         self.screen.fill((60, 65, 70), (x, 0, width, height))
 
         # Open, Save, Options, etc.
-        self.screen.blit(icon_open, (x + w(.05) + 8, w(.05) + 8))
-        self.screen.blit(icon_save, (x + w(.1) + self.w_icons + 8, w(.05) + 8))
-        self.screen.blit(icon_settings, (x + w(.15) + 2 * self.w_icons + 8, w(.05) + 8))
+        offset = (w(.8) - 3 * self.w_icons) / 2
+        self.screen.blit(icon_open, (x + offset + w(.05) + 8, w(.05) + 8))
+        self.screen.blit(icon_save, (x + offset + w(.1) + self.w_icons + 8, w(.05) + 8))
+        self.screen.blit(icon_settings, (x + offset + w(.15) + 2 * self.w_icons + 8, w(.05) + 8))
 
-        # FG/BG Selectors, Brush Preview
-        self.screen.fill(self.draw_fg_color, (x + w(.05), w(.1) + self.w_icons,
+        # FG/BG Selectors
+        offset = (w(.9) - 1.5 * self.w_icons) / 2
+        self.screen.fill(self.draw_bg_color, (x + offset + w(.05) + 0.5 * self.w_icons, w(.1) + 1.5 * self.w_icons,
                                               self.w_icons, self.w_icons))
-        self.screen.fill(self.draw_bg_color, (x + w(.1) + self.w_icons, w(.1) + self.w_icons,
+        self.screen.fill(self.draw_fg_color, (x + offset + w(.05), w(.1) + self.w_icons,
                                               self.w_icons, self.w_icons))
+        # Brush Preview
         preview = self.brush_preview()
-        pygame.draw.rect(self.screen, (180, 180, 180), (x + w(.2) + 4 * self.w_icons - 1, w(.1) + self.w_icons - 1,
+        pygame.draw.rect(self.screen, (180, 180, 180), (x + w(.2) + 4 * self.w_icons - 1,
+                                                        w(.1) + 1.25 * self.w_icons - 1,
                                                         self.w_icons + 2, self.w_icons + 2), width=1)
         self.screen.blit(preview, (x + w(.2) + 4 * self.w_icons + abs(self.w_icons - preview.get_width()) / 2,
-                                   w(.1) + self.w_icons + abs(self.w_icons - preview.get_height()) / 2))
+                                   w(.1) + 1.25 * self.w_icons + abs(self.w_icons - preview.get_height()) / 2))
 
         # History Palette
-        self.screen.blit(self.palette.surface, (x + w(0.05), w(0.15) + 2 * self.w_icons))
+        self.screen.blit(self.palette.surface, (x + w(0.05), w(0.15) + 2.5 * self.w_icons))
 
         # Symbol table
-        self.screen.blit(self.char_map.surface, (x + w(.05), w(0.2) + 4 * self.w_icons))
+        self.screen.blit(self.char_map.surface, (x + w(.05), w(0.2) + 4.5 * self.w_icons))
 
     def change_color(self, color: tuple, bg=False):
         if bg:
@@ -130,7 +134,7 @@ class Editor:
         if event.button == 1 or event.button == 3:
             w, h = self.screen.get_width(), self.screen.get_height()
             x, y = event.pos
-            sx = (w - 320) + .05 * 320
+            sx = (w - 320) + .05 * 320 + (.9 * 320 - 1.5 * self.w_icons) / 2
 
             # FG
             sy = .1 * 320 + self.w_icons
@@ -141,7 +145,8 @@ class Editor:
                     self.change_color(tuple(map(int, tup)), False)
 
             # BG
-            sx = (w - 320) + .1 * 320 + self.w_icons
+            sx += self.w_icons
+            sy += 0.5 * self.w_icons
             if sx < x < sx + self.w_icons and sy < y < sy + self.w_icons:
                 init = f"#{self.draw_bg_color[0]:02X}{self.draw_bg_color[1]:02X}{self.draw_bg_color[2]:02X}"
                 tup, hex_str = colorchooser.askcolor(initialcolor=init)
@@ -149,7 +154,7 @@ class Editor:
                     self.change_color(tuple(map(int, tup)), True)
 
             # History Palette
-            sy = .15 * 320 + 2 * self.w_icons
+            sy = .15 * 320 + 2.5 * self.w_icons
             sx = (w - 320) + .05 * 320
             if sx < x < w - .05 * 320 and sy < y < sy + self.palette.h:
                 mapped_x, mapped_y = int((x - sx) / self.palette.sq), int((y - sy) / self.palette.sq)
@@ -158,12 +163,13 @@ class Editor:
                     self.change_color(color, event.button == 3)
 
             # Character Map
-            sy = .2 * 320 + 2 * self.w_icons + self.palette.h
+            sy = .2 * 320 + 2.5 * self.w_icons + self.palette.h
             if sx < x < w - .05 * 320 and sy < y < sy + self.char_map.h:
                 mapped_x, mapped_y = int((x - sx) / self.char_map.sq), int((y - sy) / self.char_map.sq)
                 self.char_map.select(mapped_x, mapped_y)
 
             # Open Button
+            sx = (w - 320) + .05 * 320 + (.8 * 320 - 3 * self.w_icons) / 2
             sy = .05 * 320
             if sx < x < sx + self.w_icons and sy < y < sy + self.w_icons:
                 f = filedialog.askopenfilename(filetypes=[("ANSI File", "*.ans")],
@@ -180,7 +186,7 @@ class Editor:
                     print(f"Could not decode character. This should not happen :(")
 
             # Save Button
-            sx = (w - 320) + .1 * 320 + self.w_icons
+            sx += .05 * 320 + self.w_icons
             if sx < x < sx + self.w_icons and sy < y < sy + self.w_icons:
                 f = filedialog.asksaveasfilename(confirmoverwrite=True,
                                                  filetypes=[("ANSI File", "*.ans")],
@@ -198,7 +204,7 @@ class Editor:
                     print(f"Could not encode character. This should not happen :(")
 
             # Settings Button
-            sx = (w - 320) + .15 * 320 + 2 * self.w_icons
+            sx += .05 * 320 + self.w_icons
             if sx < x < sx + self.w_icons and sy < y < sy + self.w_icons:
                 new_w, new_h = open_settings_dialog(self.image.w, self.image.h)
                 if new_w != self.image.w or new_h != self.image.h:
