@@ -26,12 +26,12 @@ class Image:
         self.px = fs[0]
         self.aspect = fs[1] / fs[0]
         self.w, self.h = w, h
-        self.bg_r = np.zeros(w * h, dtype="int32")
-        self.bg_g = np.zeros(w * h, dtype="int32")
-        self.bg_b = np.zeros(w * h, dtype="int32")
-        self.fg_r = np.zeros(w * h, dtype="int32")
-        self.fg_g = np.zeros(w * h, dtype="int32")
-        self.fg_b = np.zeros(w * h, dtype="int32")
+        self.bg_r = np.zeros(w * h, dtype="u4")
+        self.bg_g = np.zeros(w * h, dtype="u4")
+        self.bg_b = np.zeros(w * h, dtype="u4")
+        self.fg_r = np.zeros(w * h, dtype="u4")
+        self.fg_g = np.zeros(w * h, dtype="u4")
+        self.fg_b = np.zeros(w * h, dtype="u4")
         self.s = np.zeros(w * h, dtype=("str", 1))
         self.font = font
         self.surface = None

@@ -22,8 +22,8 @@ from tkinter.simpledialog import Dialog
 
 
 class CharacterMap:
-    def __init__(self, w, h, font: pygame.font.Font):
-        self.w, self.h = w, h
+    def __init__(self, w, font: pygame.font.Font):
+        self.w = w
         self.surface = None
         self.font = font
         self.cols = int(w / font.size(" ")[1])
@@ -34,6 +34,9 @@ class CharacterMap:
         self.chars += "─━│┃┄┅┆┇┈┉┊┋┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳┴┵" \
                       "┶┷┸┹┺┻┼┽┾┿╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬" \
                       "╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿▀▁▂▃▄▅▆▇█▉▊▋▌▍▎▐░▒▓▔▕▖▗▘▙▚▛▜▝▞▟"
+        self.h = int(len(self.chars) / self.cols) * self.sq
+        if len(self.chars) % self.cols > 0:
+            self.h += self.sq
         self.marker = (0, 0)
         self.selected = " "
         self.redraw()
@@ -62,66 +65,39 @@ class CharacterMap:
             pass
 
 
-class Palette:
+class HistoryPalette:
     def __init__(self, w, h):
-        self.marker_bg = (0, 0)
-        self.marker_fg = (0, 0)
-        self.selected_bg = (0, 0, 0)
-        self.selected_fg = (0, 0, 0)
-        self.cols = 12
-        self.sq = int(w / self.cols)
+        self.w = w
         self.h = h
+        self.history = list()
         self.surface = None
+        self.sq = int(self.w / 6)
         self.redraw()
 
-    def value(self, index):
-        n = self.cols * int(self.h / self.sq)
-        a = round(n ** (1 / 3))
-        remainder = n - a * a * a
-        c = 0
-        while remainder < self.cols:
-            a = round((n - c) ** (1 / 3))
-            remainder = n - a * a * a
-            c += 1
-        if index < remainder:
-            # Fill the rest with b/w (even if it is redundant)
-            v = index / remainder * 255
-            return v, v, v
-        elif remainder <= index < remainder + a * a * a:
-            index -= remainder
-            g = index % a
-            b = (index // a) % a
-            r = (index // a) // a % a
-            return r / a * 255, g / a * 255, b / a * 255
-        # Something went wrong
-        return 0, 0, 0
-
-    def select(self, x, y, fg=False):
-        r, g, b = self.value(self.cols * y + x)
-        if fg:
-            self.selected_fg = (r, g, b)
-            self.marker_fg = (x, y)
-        else:
-            self.selected_bg = (r, g, b)
-            self.marker_bg = (x, y)
-        self.redraw()
+    def select(self, x, y):
+        try:
+            return self.history[6 * y + x]
+        except IndexError:
+            return None
 
     def redraw(self):
-        rows = round(self.h / self.sq)
-        self.surface = pygame.Surface((self.cols * self.sq, self.h))
+        self.surface = pygame.Surface((6 * self.sq, self.h))
         self.surface.fill((30, 35, 40))
-        for row in range(rows):
-            for column in range(self.cols):
-                r, g, b = self.value(row * self.cols + column)
-                pygame.draw.rect(self.surface, (r, g, b), (column * self.sq, row * self.sq, self.sq, self.sq))
-                if (column, row) == self.marker_bg:
-                    pygame.draw.rect(self.surface, (0, 255, 0),
-                                     (column * self.sq, row * self.sq, self.sq, self.sq),
-                                     width=1)
-                elif (column, row) == self.marker_fg:
-                    pygame.draw.rect(self.surface, (0, 0, 255),
-                                     (column * self.sq, row * self.sq, self.sq, self.sq),
-                                     width=1)
+        row, col = 0, 0
+        for color in self.history:
+            if col == 6:
+                col = 0
+                row += 1
+            r, g, b = color
+            pygame.draw.rect(self.surface, (r, g, b), (col * self.sq, row * self.sq, self.sq, self.sq))
+            col += 1
+
+    def remember(self, color):
+        if color not in self.history:
+            self.history.insert(0, color)
+            if len(self.history) >= 12:
+                self.history = self.history[:12]
+            self.redraw()
 
 
 class SettingsDialog(Dialog):
