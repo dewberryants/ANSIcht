@@ -2,9 +2,11 @@
 
 <img alt="Screenshot" src="docs/screen.webp"/>
 
+ansidote - short for ANSI.edit
+
 # Description
 ansidote is a simple text art editor that supports
-24bit colors and unicode text. Right now, the feature
+8bit colors and unicode text. Right now, the feature
 set is very limited to a basic, on-the-fly calculated
 color palette and pre-defined text characters, as
 well as single pixel drawing.
@@ -12,7 +14,7 @@ well as single pixel drawing.
 This was developed for a personal game project, and
 I'm happy to share it with everybody!
 
-Currently, ANSIcht exports and reads from .txt files
+Currently, ansidote exports and reads from .txt files
 containing characters and ANSI escape sequences.
 
 # Installation
