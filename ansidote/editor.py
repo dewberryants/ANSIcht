@@ -1,5 +1,5 @@
 """
-ansidote -  A simple ANSI art editor.
+ansi.e -  A simple ANSI art editor.
 Copyright (C) 2024 Dominik Behrens
 
 This program is free software: you can redistribute it and/or modify
