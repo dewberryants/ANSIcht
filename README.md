@@ -5,9 +5,9 @@
 # Description
 ansi.e is a simple text art editor that supports
 24bit colors and unicode text. Right now, the feature
-set is very limited to a basic, on-the-fly calculated
-color palette and pre-defined text characters, as
-well as single pixel drawing.
+set is very limited to single-pixel drawing.
+
+A color palette remembers the 12 recently used colors.
 
 This was developed for a personal game project, and
 I'm happy to share it with everybody!
@@ -22,6 +22,12 @@ containing characters and ANSI escape sequences.
 
 # Use
     ansidote
+
+Right-click on the image picks the color/symbol combination of
+the clicked pixel. To change color, left-click on the FG/BG colors
+on the tool bar to the right or use on of the colors from, history,
+where left click picks it as FG and right-click picks it as BG color.
+The bordered preview shows the currently active brush.
 
 # Known Issues
  * No scrolling on palette / character map
