@@ -98,7 +98,7 @@ class Image:
                     s = fg + s
                 if bg != last_bg:
                     s = bg + s
-                if n % self.w == 0:
+                if (n + 1) % self.w == 0:
                     s += "\x1b[0m\n" + bg + fg
                 ofile.write(s)
                 last_fg = fg
@@ -108,6 +108,7 @@ class Image:
 def load_image_from_file(path, font) -> Image:
     with open(path, "r", encoding="utf-8") as ifile:
         data = dict()
+        w = -1
         index = 0
         row = 0
         char = ifile.read(1)
@@ -116,6 +117,8 @@ def load_image_from_file(path, font) -> Image:
         while char != "":
             if char == "\n":
                 row += 1
+                if w < 0:
+                    w = index
                 char = ifile.read(1)
                 continue
             # FG r g b, BG r g b, s
@@ -143,7 +146,7 @@ def load_image_from_file(path, font) -> Image:
                 data[index][6] = char
                 index += 1
             char = ifile.read(1)
-        img = Image(int(index/row), row, font)
+        img = Image(w, row, font)
         for n, key in enumerate(data):
             entry = data[key]
             img.fg_r[n] = entry[0]
